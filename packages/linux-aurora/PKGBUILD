@@ -6,13 +6,13 @@
 
 _auroraver=7.3.0
 _aurorarel=1
-pkgrel=40
+pkgrel=42
 
-# Immutable pin on aurora-silicon/linux integration/aurora. Every bump is a
+# Immutable pin on aurora-silicon/linux aurora-edge. Every bump is a
 # PR that moves _commit; its cold-boot qualification is recorded in
 # the PR's attached qualification evidence before channel publication.
-_commit=9125b31475836ce0a6634df45b539c6d604f36a5
-_sha256=9a3969b52c6f41017b36e8bc805b63b0215fddf31b91fc5d45dd7854ab3c4f7b
+_commit=6020f67d5ce13e7aae6820cd51ab70826404932c
+_sha256=0cd6c08c92989836bb887d690fc7e9e26ffb8de752dc67e4e75b13d4195c65de
 
 # 1 with a kernel pin whose configuration resolves CONFIG_ARM64_CTXR_EXECMEM=y
 # (aurora-silicon/linux#985), which keeps every kernel code page inside the
