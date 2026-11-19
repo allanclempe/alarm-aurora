@@ -2,7 +2,11 @@
 # SPDX-License-Identifier: MIT
 # systemd initrd/runtime handoff; calibrated firmware remains outside the image.
 set -euo pipefail
-property=${AURORA_ESP_PROPERTY:-/sys/firmware/devicetree/base/chosen/asahi,efi-system-partition}
+property=${AURORA_ESP_PROPERTY:-/sys/firmware/devicetree/base/chosen/aurora,efi-system-partition}
+# LEGACY-ASAHI(2027-02-28): an aura from before the rename publishes only the old name.
+if [[ -z ${AURORA_ESP_PROPERTY:-} && ! -r $property ]]; then
+  property=/sys/firmware/devicetree/base/chosen/asahi,efi-system-partition
+fi
 admission=${AURORA_PERIPHERAL_ADMISSION:-/usr/libexec/aurora/peripheral-firmware}
 destination=${AURORA_FIRMWARE_DESTINATION:-/run/aurora-firmware}
 search_path=${AURORA_FIRMWARE_SEARCH_PATH:-/sys/module/firmware_class/parameters/path}

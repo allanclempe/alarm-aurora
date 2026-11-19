@@ -15,9 +15,9 @@ def sourced(array):
 
 class InitramfsModuleTests(unittest.TestCase):
     def test_usb4_router_comes_with_the_type_c_controllers(self):
-        # The asahi hook carries tps6598x and sn201202x but not their router.
+        # The aurora hook carries tps6598x and sn201202x but not their router.
         hooks = sourced('HOOKS')
-        self.assertEqual(hooks.index('aurora-usb4'), hooks.index('asahi') + 1)
+        self.assertEqual(hooks.index('aurora-usb4'), hooks.index('aurora') + 1)
         hook = [line.strip() for line in (BOOT/'aurora-usb4.install').read_text().splitlines()]
         self.assertIn('add_module thunderbolt_apple?', hook)
         self.assertIn('install -Dm644 aurora-usb4.install "$pkgdir/usr/lib/initcpio/install/aurora-usb4"',

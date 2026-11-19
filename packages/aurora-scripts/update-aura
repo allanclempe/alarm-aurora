@@ -4,13 +4,25 @@
 # bootchain.py; bootchain_arch.py gives it Arch's paths. See docs/updates.md.
 set -euo pipefail
 # shellcheck disable=SC1091
-[[ ! -f /etc/default/update-m1n1 ]] || source /etc/default/update-m1n1
-[[ -z ${M1N1_UPDATE_DISABLED:-} ]] || exit 0
+if [[ -f /etc/default/update-aura ]]; then
+    source /etc/default/update-aura
+elif [[ -f /etc/default/update-m1n1 ]]; then
+    # LEGACY-ASAHI(2027-02-28): an owner's settings from before the rename.
+    source /etc/default/update-m1n1
+    AURA_UPDATE_DISABLED=${AURA_UPDATE_DISABLED:-${M1N1_UPDATE_DISABLED:-}}
+    AURA=${AURA:-${M1N1:-}}
+fi
+[[ -z ${AURA_UPDATE_DISABLED:-} ]] || exit 0
 
-: "${SOURCE:=/usr/lib/asahi-boot}"
-export M1N1=${M1N1:-"$SOURCE/m1n1.bin"}
+: "${SOURCE:=/usr/lib/aurora-boot}"
+export AURA=${AURA:-"$SOURCE/aura.bin"}
 export U_BOOT=${U_BOOT:-"$SOURCE/u-boot-nodtb.bin"}
-export CONFIG=${CONFIG:-/etc/m1n1.conf}
+if [[ -z ${CONFIG:-} ]]; then
+    CONFIG=/etc/aura.conf
+    # LEGACY-ASAHI(2027-02-28): an owner's aura options from before the rename.
+    [[ -e $CONFIG || ! -e /etc/m1n1.conf ]] || CONFIG=/etc/m1n1.conf
+fi
+export CONFIG
 # Unset means the newest installed kernel's own dtbs directory.
 [[ -z ${DTBS+x} ]] || export DTBS
 export AURORA_DEVICE_TREE_COMPATIBLE=${AURORA_DEVICE_TREE_COMPATIBLE:-/proc/device-tree/compatible}
@@ -21,7 +33,7 @@ if [[ $mode == --commit || $mode == --guard ]]; then
     export AURORA_KERNEL_ACTION=refresh AURORA_KERNEL_VERSION=
     export TARGET=${TARGET:-}
 else
-    [[ -z $mode || $mode != --* ]] || { echo "unknown update-m1n1 option" >&2; exit 2; }
+    [[ -z $mode || $mode != --* ]] || { echo "unknown update-aura option" >&2; exit 2; }
     # The pacman hook runs once after the whole transaction, so the
     # installed kernels are already final: pick the newest.
     export AURORA_KERNEL_ACTION=refresh AURORA_KERNEL_VERSION=
@@ -31,7 +43,7 @@ fi
 # One lock covers discovery, mounting, staging and the rename, for the pacman
 # hook, the boot-time commit and the guard alike.
 mkdir -p /run/lock
-exec 9>/run/lock/update-m1n1.lock
+exec 9>/run/lock/update-aura.lock
 flock -x 9
 mounted=false
 cleanup() {
@@ -45,13 +57,16 @@ if [[ $mode != --commit && $mode != --guard ]]; then
 fi
 if [[ -z $TARGET ]]; then
     # shellcheck disable=SC1091
-    source /usr/share/asahi-scripts/functions.sh
+    source /usr/share/aurora-scripts/functions.sh
     # functions.sh is POSIX sh; its ESP lookup pipes a file that may be absent.
     set +o pipefail
     mount_sys_esp /run/.system-efi
     set -o pipefail
     mounted=true
-    export TARGET=/run/.system-efi/m1n1/boot.bin
+    # The Stage 2 this Mac's Stage 1 chainloads (functions.sh).
+    stage2_dir=$(aurora_stage2_dir /run/.system-efi)
+    mkdir -p "/run/.system-efi/$stage2_dir"
+    export TARGET=/run/.system-efi/$stage2_dir/boot.bin
 fi
 # The trial needs the real ESP mount; a plain write (an image build) does not.
 ESP_ROOT=$(findmnt -nro TARGET --target "$(dirname "$TARGET")" 2>/dev/null || true)

@@ -1,0 +1,8 @@
+#!/bin/bash
+# SPDX-License-Identifier: MIT
+# LEGACY-ASAHI(2027-02-28): the mkinitcpio hook was renamed to "aurora". An
+# mkinitcpio.conf written before the rename still lists the old name; this
+# alias builds the same hook so that initramfs keeps loading vendor firmware.
+# add_runscript names the runtime hook after the file that defines build(), so
+# the image gets /hooks/aurora either way.
+. /usr/lib/initcpio/install/aurora

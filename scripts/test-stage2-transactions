@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: MIT
 # Disposable CI chroot only (the signed ALARM root scripts/ci-build-package
 # builds in). Every boot input is synthetic and the "ESP" is a directory: no
-# host device, mount or Mac is touched. Run after building asahi-scripts:
+# host device, mount or Mac is touched. Run after building aurora-scripts:
 #   chroot out/container /bin/bash /src/scripts/test-stage2-transactions /tmp/package-build
 #
-# Real pacman transactions run the packaged hook and update-m1n1: a first
+# Real pacman transactions run the packaged hook and update-aura: a first
 # kernel writes Stage 2, a newer same-generation kernel replaces it with a
 # backup, a newer DT ABI generation is refused while older kernels stay
 # installed, and removing them (the hook runs on removal too) lets it through.
@@ -14,7 +14,7 @@
 # against synthetic proc/sys trees, as fedora-aurora's test does.
 set -euo pipefail
 [[ $(id -u) == 0 && $(uname -m) == aarch64 && -d /src/.git ]]
-packages=${1:?directory containing the freshly built asahi-scripts package}
+packages=${1:?directory containing the freshly built aurora-scripts package}
 proof=/src/out/stage2-transactions
 rm -rf "$proof"
 mkdir -p "$proof"
@@ -84,8 +84,8 @@ arch=(any)
 license=(MIT)
 options=(!debug !strip)
 package() {
-  printf 'aura-$release' | install -Dm644 /dev/stdin "\$pkgdir/usr/lib/asahi-boot/m1n1.bin"
-  printf 'u-boot' | install -Dm644 /dev/stdin "\$pkgdir/usr/lib/asahi-boot/u-boot-nodtb.bin"
+  printf 'aura-$release' | install -Dm644 /dev/stdin "\$pkgdir/usr/lib/aurora-boot/aura.bin"
+  printf 'u-boot' | install -Dm644 /dev/stdin "\$pkgdir/usr/lib/aurora-boot/u-boot-nodtb.bin"
 }
 EOF
 }
@@ -100,23 +100,23 @@ for dir in "$fixtures"/*/; do
 done
 fixture() { printf '%s\n' "$fixtures/$1"/*.pkg.tar.*; }
 
-mkdir -p /boot/efi/m1n1 /etc/default
+mkdir -p /boot/efi/aurora /etc/default
 # An explicit target: no ESP is mounted. No Apple compatible: an image-style
 # plain write, so the trial is never armed here.
-cat > /etc/default/update-m1n1 <<'CONFIG'
-TARGET=/boot/efi/m1n1/boot.bin
+cat > /etc/default/update-aura <<'CONFIG'
+TARGET=/boot/efi/aurora/boot.bin
 AURORA_DEVICE_TREE_COMPATIBLE=/nonexistent
 CONFIG
-stage2=/boot/efi/m1n1/boot.bin
+stage2=/boot/efi/aurora/boot.bin
 contains() { python3 -c 'import sys; sys.exit(open(sys.argv[2], "rb").read() not in open(sys.argv[1], "rb").read())' "$@"; }
 starts() { python3 -c 'import sys; sys.exit(not open(sys.argv[1], "rb").read().startswith(sys.argv[2].encode()))' "$@"; }
 
-pac -U "$packages"/asahi-scripts-*.pkg.tar.* > "$proof/install-updater.log" 2>&1
-pacman -Q asahi-scripts | tee -a "$proof/summary.txt"
+pac -U "$packages"/aurora-scripts-*.pkg.tar.* > "$proof/install-updater.log" 2>&1
+pacman -Q aurora-scripts | tee -a "$proof/summary.txt"
 pacman -T aurora-stage2-trial aurora-stage2-ctxr-slot
-cmp /usr/bin/update-m1n1 /src/packages/asahi-scripts/update-m1n1
-cmp /usr/libexec/aurora/bootchain.py /src/packages/asahi-scripts/bootchain.py
-cmp /usr/share/libalpm/hooks/95-m1n1-install.hook /src/packages/asahi-scripts/95-m1n1-install.hook
+cmp /usr/bin/update-aura /src/packages/aurora-scripts/update-aura
+cmp /usr/libexec/aurora/bootchain.py /src/packages/aurora-scripts/bootchain.py
+cmp /usr/share/libalpm/hooks/95-aura-install.hook /src/packages/aurora-scripts/95-aura-install.hook
 systemctl --root=/ is-enabled aurora-stage2-commit.service aurora-stage2-guard.timer | tee "$proof/units-enabled.txt"
 [[ $(sort -u "$proof/units-enabled.txt") == enabled ]]
 systemd-analyze verify /usr/lib/systemd/system/aurora-stage2-commit.service \
@@ -124,7 +124,7 @@ systemd-analyze verify /usr/lib/systemd/system/aurora-stage2-commit.service \
   > "$proof/units-verify.log" 2>&1
 log 'updater installed; units enabled by preset and verified'
 
-rc=0; update-m1n1 --bogus > "$proof/bad-option.log" 2>&1 || rc=$?
+rc=0; update-aura --bogus > "$proof/bad-option.log" 2>&1 || rc=$?
 [[ $rc == 2 ]]
 
 # Stage 2 inputs without any kernel: refused, nothing written.
@@ -176,8 +176,8 @@ log 'aura input upgrade: Stage 2 rebuilt through the hook'
 
 # The installed helper against synthetic trial, fallback and guard boots.
 export BOOTCHAIN_MODULE=/usr/libexec/aurora/bootchain.py BOOTCHAIN_ARCH_MODULE=/usr/libexec/aurora/bootchain_arch.py
-python3 /src/packages/asahi-scripts/test_bootchain.py -v > "$proof/installed-shared-tests.log" 2>&1
-python3 /src/packages/asahi-scripts/test_bootchain_arch.py -v > "$proof/installed-arch-tests.log" 2>&1
+python3 /src/packages/aurora-scripts/test_bootchain.py -v > "$proof/installed-shared-tests.log" 2>&1
+python3 /src/packages/aurora-scripts/test_bootchain_arch.py -v > "$proof/installed-arch-tests.log" 2>&1
 grep -E '^Ran [0-9]+ tests' "$proof"/installed-*-tests.log | tee -a "$proof/summary.txt"
-pacman -Q asahi-scripts stage2-inputs-fixture linux-fixture-c > "$proof/installed.txt"
+pacman -Q aurora-scripts stage2-inputs-fixture linux-fixture-c > "$proof/installed.txt"
 log 'Arch Linux ARM Stage 2 transactions and installed trial suites passed'

@@ -14,7 +14,7 @@ SWAPS = {
 # Packages with backup files and conflicts that share no backup file with the
 # package they conflict with.
 NOT_SHARED = {
-    'aurora-audio': 'asahi-audio ships no backup files',
+    'aurora-audio': 'the aurora-audio source ships no backup files',
     'aurora-sep': 'conflicts only with old linux-aurora builds',
     'fex-emu': 'FEX-Emu ships no backup files',
 }

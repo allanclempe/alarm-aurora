@@ -6,7 +6,7 @@ policy; a device name never selects a different kernel configuration.
 
 | Configuration input | Before | After |
 | --- | --- | --- |
-| Shared hardware | Source `arch/arm64/configs/asahi.config` plus local copies | Source fragment is the sole hardware overlay |
+| Shared hardware | Source `arch/arm64/configs/aurora.config` plus local copies | Source fragment is the sole hardware overlay |
 | Per-device fragments | None | None |
 | Local common hardware copy | 80 requests in `common.config` | Removed; generic peripheral policy retained in the distro base |
 | Distribution policy | Full distro base | Retained |

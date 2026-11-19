@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 """Arch Linux ARM layout for Aurora's shared Stage 2 updater.
 
-bootchain.py is fedora-aurora's packages/update-m1n1/bootchain.py, unchanged.
+bootchain.py is fedora-aurora's packages/update-aura/bootchain.py, unchanged.
 It owns the DT ABI generation guard, the aura-try trial, the boot-time commit
 and the guard. This file only says where Arch keeps things:
 
@@ -123,7 +123,7 @@ def main():
         else:
             update.apply()
     except (Refused, OSError, ValueError, subprocess.SubprocessError) as error:
-        print(f'update-m1n1: {error}; keeping the last complete Stage 2 and trial evidence', file=sys.stderr)
+        print(f'update-aura: {error}; keeping the last complete Stage 2 and trial evidence', file=sys.stderr)
         return 1
     return 0
 

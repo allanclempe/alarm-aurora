@@ -12,19 +12,19 @@ section at `https://aurorasilicon.org/alarm-aurora/<channel>/aarch64`. `<channel
 input; the default, `testing`, is today's URL. The Aurora key is locally signed in the image and shipped
 by `aurora-keyring`, whose install script imports added keys on every upgrade.
 
-On a kernel, aura or U-Boot update (and after a kernel removal), the `95-m1n1-install.hook` pacman hook
-that Aurora's `asahi-scripts` ships runs `update-m1n1` once after the transaction, and mkinitcpio
-rebuilds the initramfs with the `asahi` and `aurora-vendor` hooks, which read this Mac's firmware from
-the ESP at boot. `update-m1n1` composes aura, the newest installed kernel's device trees
+On a kernel, aura or U-Boot update (and after a kernel removal), the `95-aura-install.hook` pacman hook
+that Aurora's `aurora-scripts` ships runs `update-aura` once after the transaction, and mkinitcpio
+rebuilds the initramfs with the `aurora` and `aurora-vendor` hooks, which read this Mac's firmware from
+the ESP at boot. `update-aura` composes aura, the newest installed kernel's device trees
 (`/usr/lib/modules/<release>/dtbs`) and U-Boot into the ESP Stage 2. GRUB boots with the device tree
 U-Boot hands it, so there is no `/boot/dtb` link to keep.
 
-The updater is fedora-aurora's (aurora-silicon/fedora-aurora#193): `packages/asahi-scripts/bootchain.py`,
-its test suite, the units and the preset are Fedora's `packages/update-m1n1` files byte for byte
-(`tests/test_update_m1n1.py` checks their git blob ids). `bootchain_arch.py` gives that code Arch's
+The updater is fedora-aurora's (aurora-silicon/fedora-aurora#193): `packages/aurora-scripts/bootchain.py`,
+its test suite, the units and the preset started as Fedora's `packages/update-aura` files
+(`tests/test_update_aura.py` checks their git blob ids). `bootchain_arch.py` gives that code Arch's
 paths: flat `dtbs` directories, `/boot/vmlinuz-<pkgbase>` mapped to its package's kernel, no `/boot/dtb`,
 and a `pacman -R` refusal. The kernel, aura and U-Boot packages depend on `aurora-stage2-trial`, which
-only this `asahi-scripts` provides, so a stock asahi-alarm `asahi-scripts` cannot satisfy them.
+only this `aurora-scripts` provides, so a stock asahi-alarm `asahi-scripts` cannot satisfy them.
 
 ### Device trees and the next boot
 
@@ -48,13 +48,13 @@ covering a boot that feeds the hardware watchdog but never passes the checks.
 
 After a fallback the commit service logs one line, keeps the working image and leaves `.next` and
 `.next.json` for inspection; the recorded attempt means that exact candidate is never armed again
-automatically. Any change to the Stage 2 inputs (kernel device trees, aura, U-Boot or `/etc/m1n1.conf`)
+automatically. Any change to the Stage 2 inputs (kernel device trees, aura, U-Boot or `/etc/aura.conf`)
 is a new candidate with its own trial, also on the same kernel release, and the previous candidate is
 kept as `.failed-<sha256>`. A commit marks its record `committed`, so reverting to that exact image is
 trialled again. Once a trial boot has committed, the rest of that boot is an ordinary boot and pacman
-updates can stage the next candidate. Records named after a kernel release (asahi-scripts 20261023-4)
+updates can stage the next candidate. Records named after a kernel release (the package's 20261023-4 release)
 still block the candidate whose hash they contain. `journalctl -u aurora-stage2-commit -u aurora-stage2-guard` shows the outcome.
-`asahi-scripts`' install script applies `90-aurora-stage2.preset` on install and on the upgrade that brings
+`aurora-scripts`' install script applies `90-aurora-stage2.preset` on install and on the upgrade that brings
 the units (`systemctl --preset-mode=enable-only preset`), as Fedora's `%systemd_post` and `%triggerun` do.
 
 ### DT ABI generations
@@ -64,14 +64,14 @@ as fedora-aurora's `packages/kernel-aurora/dtb-abi`). Trees may change within a 
 older kernels cannot boot with needs a higher one. A kernel without the file counts as generation 1 (declaring it changed no device tree) and
 a malformed value is refused. While any installed kernel (another kernel package, or a
 `/boot/vmlinuz-<name>` GRUB still offers whose package is gone) has a lower generation than the newest
-kernel's trees, `update-m1n1` refuses: Stage 2 stays as it is, and the message lists those kernels with a
+kernel's trees, `update-aura` refuses: Stage 2 stays as it is, and the message lists those kernels with a
 `sudo pacman -R $(pacman -Qqo ...)` command. Nothing is removed automatically; removing them runs the hook
 again and the new trees go in. A kernel that has no `dtbs` directory is refused the same way.
 
 ### Checking updater changes
 
 `.github/workflows/stage2.yml` runs on changes to the updater, the boot-chain recipes and these tests.
-One job runs the shared and Arch suites with dtc, plus shellcheck. The other builds `asahi-scripts` in
+One job runs the shared and Arch suites with dtc, plus shellcheck. The other builds `aurora-scripts` in
 the signed ALARM root (its `check()` runs both suites) and runs `scripts/test-stage2-transactions` there:
 real pacman transactions install synthetic kernels built with `linux-aurora`'s own install lines and
 synthetic aura/U-Boot inputs, and check the first write, the `.old` backup, the generation refusal while
@@ -90,18 +90,30 @@ Such an aura moves the kernel into the CTXR window, which only a kernel built wi
 `CONFIG_ARM64_CTXR_EXECMEM` keeps its code inside. With `_monitor_free=1`, aura depends on
 `aurora-ctxr-execmem`, which `linux-aurora` provides when its `_ctxr_execmem=1`. Its `prepare()` checks
 that flag against the resolved configuration, so it can be set only with a kernel pin that has
-aurora-silicon/linux#985. `tests/test_update_m1n1.py` fails if `_monitor_free` is set without it.
+aurora-silicon/linux#985. `tests/test_update_aura.py` fails if `_monitor_free` is set without it.
 Every kernel pin since 4731456 has it, and `packages/linux-aurora/config` turns it on, so `_ctxr_execmem` is 1.
 
 With the marker, a Mac that boots a Mach-O Stage 1 (`/proc/device-tree/compatible` names one of the chips
 in the installer's `AuraStage1Format.usesMachO`: T8130 and later, T6040 and later) gets
-`m1n1/boot-ctxr.bin` instead, with only this board's DTBs. A trial uses `boot-ctxr.bin.next` and a `.prev`
+`aurora/boot-ctxr.bin` instead, with only this board's DTBs. A trial uses `boot-ctxr.bin.next` and a `.prev`
 backup on commit; an older Stage 1 gets a direct replacement and `boot-ctxr.bin.old`. It never touches
-`m1n1/boot.bin`, because the padded Stage 1 these Macs enroll chainloads `boot-ctxr.bin`. M1 to M3 Macs
+`aurora/boot.bin`, because the padded Stage 1 these Macs enroll chainloads `boot-ctxr.bin`. M1 to M3 Macs
 only ever use `boot.bin`. A missing board tree or a candidate over aura's 16 MiB slot is refused before
 either live image changes.
 
-Image builds set `AURORA_DEVICE_TREE_COMPATIBLE=/nonexistent`, so `update-m1n1` writes `boot.bin` as before
+Stage 2 lives in the ESP's `aurora/` directory. A Stage 1 enrolled before the move still chainloads
+`m1n1/boot.bin` or `m1n1/boot-ctxr.bin`, and only the owner can enrol a new one, so when the ESP has
+neither file under `aurora/` but one under `m1n1/`, `update-aura` keeps updating that one
+(`aurora_stage2_dir` in `functions.sh`). The other transitional fallbacks, all marked
+`LEGACY-ASAHI(2027-02-28)`: `functions.sh`, the `aurora` mkinitcpio hook and `load-vendor-firmware` read
+the ESP PARTUUID from `/chosen/aurora,efi-system-partition` and fall back to the old property name an
+older aura publishes; `bootchain.py` reads `aurora,aura-stage1-version` and falls back the same way;
+`update-aura` reads `/etc/default/update-aura` and `/etc/aura.conf`, or the old `update-m1n1` and
+`m1n1.conf` files when only those exist; the package installs `update-m1n1` and an `asahi`
+mkinitcpio hook as aliases, so an older `mkinitcpio.conf` still builds; `aurora-fwupdate` reads the
+firmware archive from the ESP's `aurora/` and falls back to `asahi/`.
+
+Image builds set `AURORA_DEVICE_TREE_COMPATIBLE=/nonexistent`, so `update-aura` writes `boot.bin` as before
 whichever Mac builds the image. If the image's aura has the marker, `scripts/prepare-ctxr-stage2.py` then
 adds `boot-ctxr.bin`, a copy of it, to the image's ESP, and `boot-ctxr-<board>.bin`, a copy of
 `boot-<board>.bin`, for each Mach-O board. The installer picks the board's file over the combined one. The

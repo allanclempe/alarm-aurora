@@ -1,7 +1,7 @@
 # Aurora bootloader; ordinary updates refresh ESP Stage 2, never enroll Stage 1.
 pkgname=aura
 pkgver=1.0.0b13.1
-pkgrel=1
+pkgrel=2
 pkgdesc='Aurora Silicon bootloader for Apple Silicon'
 arch=('aarch64')
 groups=('aurora-platform-apple-silicon')
@@ -56,14 +56,14 @@ build() {
 }
 package() {
   # Required on the installed system, not to build the bootloader. A Mach-O Mac
-  # needs the update-m1n1 that leaves boot.bin alone, or this aura could overwrite it.
+  # needs the update-aura that leaves boot.bin alone, or this aura could overwrite it.
   # A new aura reaches Stage 2 through the updater's aura-try trial.
-  depends=('asahi-scripts>=20260127.1' 'aurora-stage2-ctxr-slot' 'aurora-stage2-trial' 'uboot-aurora' "${_ctxr_kernel[@]}")
+  depends=('aurora-scripts>=20261023-10' 'aurora-stage2-ctxr-slot' 'aurora-stage2-trial' 'uboot-aurora' "${_ctxr_kernel[@]}")
   # Building a PR candidate does not assert release/hardware qualification.
-  install -Dm644 aura/build/aura.bin "$pkgdir/usr/lib/asahi-boot/m1n1.bin"
-  install -d "$pkgdir/usr/lib/m1n1-neo"
-  ln -s ../asahi-boot/m1n1.bin "$pkgdir/usr/lib/m1n1-neo/m1n1.bin"
-  # An aura without the monitor: update-m1n1 then stops writing boot.bin on Mach-O Macs.
+  install -Dm644 aura/build/aura.bin "$pkgdir/usr/lib/aurora-boot/aura.bin"
+  install -d "$pkgdir/usr/lib/aura-neo"
+  ln -s ../aurora-boot/aura.bin "$pkgdir/usr/lib/aura-neo/aura.bin"
+  # An aura without the monitor: update-aura then stops writing boot.bin on Mach-O Macs.
   if (( _monitor_free )); then
     install -Dm644 /dev/null "$pkgdir/usr/share/aura/monitor-free"
   fi

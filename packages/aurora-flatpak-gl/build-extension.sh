@@ -10,7 +10,7 @@
 #
 # The extension is exported with ExtensionOf priority 10, above GL.default.
 # Flatpak lists GL drivers in priority order, and the first driver to provide a
-# merged file name (asahi_icd.aarch64.json, 50_mesa.json, asahi_dri.so, ...)
+# merged file name (aurora_icd.aarch64.json, 50_mesa.json, aurora_dri.so, ...)
 # keeps it, so with both drivers enabled the Aurora files are the ones apps see.
 set -euo pipefail
 branch=${1:?runtime branch, e.g. 25.08}

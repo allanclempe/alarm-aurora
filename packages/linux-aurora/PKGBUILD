@@ -23,7 +23,7 @@ _ctxr_provides=()
 if (( _ctxr_execmem )); then _ctxr_provides=('aurora-ctxr-execmem'); fi
 
 # This image pairs the kernel with the pinned Aura implementation. The legacy
-# m1n1 compatibility version alone does not establish display-handoff support.
+# aura compatibility version alone does not establish display-handoff support.
 # SN012776 amp settings come from the DT that aura 1.0.0b5 fills in
 # (https://github.com/aurora-silicon/linux/pull/981,
 # https://github.com/aurora-silicon/aura/pull/75); under an older Stage 2
@@ -35,7 +35,7 @@ if (( _ctxr_execmem )); then _ctxr_provides=('aurora-ctxr-execmem'); fi
 _aura_version=1.0.0b12
 
 # The DT ABI generation this kernel's trees use and need (dtb-abi, installed as
-# /usr/lib/modules/<release>/dtb-abi). update-m1n1 refuses to put newer-
+# /usr/lib/modules/<release>/dtb-abi). update-aura refuses to put newer-
 # generation trees in Stage 2 while a kernel that needs an older one is still
 # installed. Bump it, in step with fedora-aurora's packages/kernel-aurora/dtb-abi,
 # only when the trees stop working with older kernels.
@@ -62,7 +62,7 @@ sha256sums=('534214d07ad388822b3d7ca2b63efce988c1424131329775479ebbd7552715b0'
             '9a3969b52c6f41017b36e8bc805b63b0215fddf31b91fc5d45dd7854ab3c4f7b'
             '76cef34049e1e22be3abc0c9a457c381f8cdcf7ac419322c928555d269f0be08'
             '84a03d5fea19cae243c89f50c1736c639622d25d4d1de8d7d53ebd8f603c0f62'
-            '12a712faddcd8d624b28641b63187796e29732d34fb18d0b3a037443b74c3dcc'
+            '9253ef95cd4e5e60f49c013367c1920114ca3c91b3b48b2834ec03e8bd6e8c37'
             '26293576b6b9091cc8a725a85326b945f32fc87127878c8704d2f3927d58bd69'
             '85455ba75cdbb6ffbe90871154100f1d2bc271ec18071b5b98acf5bc7b1ec6b6'
             '4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865')
@@ -118,18 +118,18 @@ prepare() {
   rustup toolchain install 1.99.0 --profile minimal --component rust-src
   mkdir -p build/base
   # The full distribution configuration (resolved against this pin) is the
-  # base; the source-pinned asahi.config owns shared Apple hardware settings.
+  # base; the source-pinned aurora.config owns shared Apple hardware settings.
   cp ../config build/base/.config
-  scripts/kconfig/merge_config.sh -m -O "$PWD/build/base" build/base/.config arch/arm64/configs/asahi.config
+  scripts/kconfig/merge_config.sh -m -O "$PWD/build/base" build/base/.config arch/arm64/configs/aurora.config
   # Keep shared kexec support: apple_piodma_lock_transition() in
   # pcie-apple-piodma-diag.c acquires the kernel kexec blocker before Neo radio
   # admission retains DMA/firmware ownership. Both kexec
   # load APIs and execution reject while that blocker is held.
-  # Keep config's -ARCH suffix: omarchy-mac-boot and update-m1n1 discover
+  # Keep config's -ARCH suffix: omarchy-mac-boot and update-aura discover
   # device trees under /lib/modules/*-ARCH.
   scripts/config --file build/base/.config --set-str LOCALVERSION '-ARCH' --disable LOCALVERSION_AUTO
   _make O="$PWD/build/base" olddefconfig
-  python3 ../validate-config.py arch/arm64/configs/asahi.config build/base/.config
+  python3 ../validate-config.py arch/arm64/configs/aurora.config build/base/.config
   local ctxr=0
   if grep -qx 'CONFIG_ARM64_CTXR_EXECMEM=y' build/base/.config; then ctxr=1; fi
   if (( ctxr != _ctxr_execmem )); then
@@ -167,9 +167,9 @@ build() {
 _package_kernel() {
   pkgdesc="The $pkgdesc kernel and modules"
   # aurora-userpages: an ordinary upgrade brings the launcher and user4k=on.
-  # aurora-stage2-trial: the update-m1n1 that trials these trees before
+  # aurora-stage2-trial: the update-aura that trials these trees before
   # committing them and checks the DT ABI generation.
-  # The restored legacy interface needs the matching Asahi speaker graphs.
+  # The restored legacy interface needs the matching Aurora speaker graphs.
   depends=(coreutils kmod initramfs $2 "aura>=$_aura_version" 'aurora-audio>=4.1.aurora2-12' aurora-stage2-trial aurora-userpages)
   optdepends=('crda: to set the correct wireless channels of your country'
               'linux-firmware: firmware images needed for some devices')

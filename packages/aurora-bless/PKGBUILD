@@ -1,13 +1,13 @@
 pkgbase=aurora-bless
 pkgname=('aurora-bless' 'aurora-nvram' 'aurora-btsync' 'aurora-panel-nits')
 pkgver=0.4.4.aurora5
-pkgrel=1
+pkgrel=2
 pkgdesc='Aurora Apple Silicon startup-volume selector with Neo NVRAM support'
 arch=('aarch64')
 groups=('aurora-platform-apple-silicon')
 url='https://github.com/aurora-silicon/aurora-bless'
 license=('MIT')
-_commit=9b47a17827854588d458b1dcc8018c66f5c3237f
+_commit=aa89bd076048d2f7b99320434f14dee2d4328f7c
 makedepends=('git' 'rust' 'cargo' 'make' 'dbus' 'pkgconf')
 source=("aurora-bless::git+$url.git#commit=$_commit")
 sha256sums=('SKIP')
@@ -16,16 +16,17 @@ _bin() {
 }
 build() {
   cd aurora-bless
-  cargo build --locked --release -p asahi-bless -p aurora-nvram -p aurora-btsync -p aurora-panel-nits ${CARGO_TARGET:+--target "$CARGO_TARGET"}
+  cargo build --locked --release -p aurora-bless -p aurora-nvram -p aurora-btsync -p aurora-panel-nits ${CARGO_TARGET:+--target "$CARGO_TARGET"}
 }
 check() {
   cd aurora-bless
-  cargo test --locked -p asahi-bless -p apple-nvram -p aurora-nvram -p aurora-btsync -p aurora-panel-nits
+  cargo test --locked -p aurora-bless -p apple-nvram -p aurora-nvram -p aurora-btsync -p aurora-panel-nits
 }
 package_aurora-bless() {
   provides=("asahi-bless=$pkgver")
   conflicts=('asahi-bless')
-  install -Dm755 "$(_bin asahi-bless)" "$pkgdir/usr/bin/aurora-bless"
+  install -Dm755 "$(_bin aurora-bless)" "$pkgdir/usr/bin/aurora-bless"
+  # LEGACY-ASAHI(2027-02-28): the old command names, for scripts written before the rename.
   ln -s aurora-bless "$pkgdir/usr/bin/asahi-bless"
   install -Dm644 aurora-bless/LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }

@@ -35,18 +35,18 @@ build() {
   export MESA_GIT_SHA1_OVERRIDE=$_commit
   unset CFLAGS CXXFLAGS CPPFLAGS LDFLAGS PKG_CONFIG_PATH
   local common=(--prefix=/usr --buildtype=release -Db_ndebug=true --wrap-mode=nodownload
-    -Dplatforms=x11,wayland -Dgallium-drivers=asahi,zink,softpipe -Dvulkan-drivers=asahi
+    -Dplatforms=x11,wayland -Dgallium-drivers=aurora,zink,softpipe -Dvulkan-drivers=aurora
     -Dvulkan-layers= -Dglx=dri -Degl=enabled -Dgbm=enabled -Dgles1=disabled -Dgles2=enabled
     -Dglvnd=enabled -Dgallium-rusticl=false -Dbuild-tests=false -Dvalgrind=disabled
     -Dvideo-codecs= -Dmicrosoft-clc=disabled -Dlibunwind=disabled -Dlmsensors=disabled)
   PKG_CONFIG_LIBDIR=/usr/lib/pkgconfig:/usr/share/pkgconfig \
     meson setup tools "${common[@]}" --libdir=lib64 -Dllvm=enabled
   ninja -C tools -j"${OMARCHY_BUILD_JOBS:-10}" \
-    src/compiler/clc/mesa_clc src/compiler/spirv/vtn_bindgen2 src/asahi/clc/asahi_clc
+    src/compiler/clc/mesa_clc src/compiler/spirv/vtn_bindgen2 src/aurora/clc/aurora_clc
   printf '%s\n' '[binaries]' \
     "mesa_clc = '$PWD/tools/src/compiler/clc/mesa_clc'" \
     "vtn_bindgen2 = '$PWD/tools/src/compiler/spirv/vtn_bindgen2'" \
-    "asahi_clc = '$PWD/tools/src/asahi/clc/asahi_clc'" > tools.ini
+    "aurora_clc = '$PWD/tools/src/aurora/clc/aurora_clc'" > tools.ini
   local drivers=(-Dllvm=disabled -Dspirv-tools=disabled -Dmesa-clc=system
     -Dprecomp-compiler=system --native-file tools.ini)
   PKG_CONFIG_LIBDIR=/usr/lib/pkgconfig:/usr/share/pkgconfig \
@@ -79,7 +79,7 @@ check() {
     directory=lib64
     [[ $bits == 64 ]] || directory=lib
     for binary in "$srcdir/layer/usr/$directory/"libgallium-*.so \
-                  "$srcdir/layer/usr/$directory/libvulkan_asahi.so"; do
+                  "$srcdir/layer/usr/$directory/libvulkan_aurora.so"; do
       readelf -h "$binary" | grep -q "Class:.*ELF$bits" || return 1
       if [[ $bits == 64 ]]; then
         readelf -h "$binary" | grep -q 'Machine:.*X86-64' || return 1

@@ -6,7 +6,7 @@
 
 ```text
 /usr/lib/dri/v4l2_request_drv_video.so
-/usr/lib/dri/asahi_drv_video.so -> v4l2_request_drv_video.so
+/usr/lib/dri/aurora_drv_video.so -> v4l2_request_drv_video.so
 /usr/lib/dri/aurora_drv_video.so -> v4l2_request_drv_video.so
 ```
 

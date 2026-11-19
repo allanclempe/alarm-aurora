@@ -94,7 +94,7 @@ class FexSteamTests(unittest.TestCase):
 
     def test_fex_emu_takes_over_fex_emu_and_not_fex(self):
         self.assertEqual(field('fex-emu', None, 'pkgname'), ['fex-emu', 'fex-emu-steam'])
-        # pacman -Syu moves an Asahi FEX-Emu install to fex-emu; `fex` is not
+        # pacman -Syu moves an Asahi ALARM FEX-Emu install to fex-emu; `fex` is not
         # ours to take (Fedora's is an unrelated tool).
         provides = field('fex-emu', 'package_fex-emu', 'provides')
         self.assertEqual(len(provides), 1)

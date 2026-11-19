@@ -1,0 +1,59 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+
+set -eu
+
+unset PYTHON
+
+[ -e /etc/default/aurora-fwupdate ] && . /etc/default/aurora-fwupdate
+
+: "${AURORAFW:=}"
+: "${VENDORFW:=}"
+: "${VENDORFWTMP:=/run/.vendorfw-tmp}"
+: "${PYTHON:=/usr/bin/python3}"
+
+if [ -e "$(dirname "$0")"/functions.sh ]; then
+    . "$(dirname "$0")"/functions.sh
+else
+    . /usr/share/aurora-scripts/functions.sh
+fi
+
+umount=false
+
+if [ -z "$AURORAFW" ] && [ -z "$VENDORFW" ]; then
+    mount_sys_esp /run/.system-efi
+    AURORAFW="/run/.system-efi/aurora/"
+    # LEGACY-ASAHI(2027-02-28): an installer from before the rename left the
+    # firmware archive under asahi/.
+    if [ ! -e "${AURORAFW}/all_firmware.tar.gz" ] && [ -e /run/.system-efi/asahi/all_firmware.tar.gz ]; then
+        AURORAFW="/run/.system-efi/asahi/"
+    fi
+    VENDORFW="/run/.system-efi/vendorfw"
+    umount=true
+fi
+
+if [ ! -e "${AURORAFW}/all_firmware.tar.gz" ]; then
+    echo "No firmware tarball found, skipping extraction"
+    exit 0
+fi
+
+if [ ! -d "$VENDORFW" ]; then
+  mkdir -p "$VENDORFW"
+fi
+
+if [ ! -d "$VENDORFWTMP" ]; then
+  mkdir -p "$VENDORFWTMP"
+fi
+
+echo "Upgrading vendor firmware package"
+# asahi-fwextract comes from the asahi-alarm repository's package of that name.
+asahi-fwextract "$AURORAFW" "$VENDORFWTMP"
+rm -rf "$VENDORFW".new
+mv "${VENDORFWTMP}" "$VENDORFW".new
+rm -rf "$VENDORFW"
+mv "$VENDORFW".new "$VENDORFW"
+rm -rf "$VENDORFWTMP"
+echo "Firmware upgraded"
+
+$umount && umount /run/.system-efi
+true

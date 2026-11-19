@@ -31,12 +31,12 @@ class ArchLayout(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
-        self.env = {'TARGET': '/esp/m1n1/boot.bin', 'M1N1': '/usr/lib/asahi-boot/m1n1.bin',
-                    'U_BOOT': '/usr/lib/asahi-boot/u-boot-nodtb.bin'}
-        self.put('/usr/lib/asahi-boot/m1n1.bin', b'AURA')
-        self.put('/usr/lib/asahi-boot/u-boot-nodtb.bin', b'U-BOOT')
-        self.target = self.put('/esp/m1n1/boot.bin', b'GOOD-STAGE2')
-        self.backup = self.put('/esp/m1n1/boot.bin.old', b'OLDER-STAGE2')
+        self.env = {'TARGET': '/esp/aurora/boot.bin', 'AURA': '/usr/lib/aurora-boot/aura.bin',
+                    'U_BOOT': '/usr/lib/aurora-boot/u-boot-nodtb.bin'}
+        self.put('/usr/lib/aurora-boot/aura.bin', b'AURA')
+        self.put('/usr/lib/aurora-boot/u-boot-nodtb.bin', b'U-BOOT')
+        self.target = self.put('/esp/aurora/boot.bin', b'GOOD-STAGE2')
+        self.backup = self.put('/esp/aurora/boot.bin.old', b'OLDER-STAGE2')
         (self.root / 'boot').mkdir()
 
     def put(self, path, content):
@@ -214,8 +214,8 @@ class ArchTrial(unittest.TestCase):
 
     def trial_boot(self):
         # aura Stage 1 marks the try spent before it loads the candidate.
-        self.marker.write_bytes(b'spent\nm1n1/boot.bin.next\n')
-        self.put('/proc/device-tree/chosen/aurora,trial', b'm1n1/boot.bin.next\0')
+        self.marker.write_bytes(b'spent\naurora/boot.bin.next\n')
+        self.put('/proc/device-tree/chosen/aurora,trial', b'aurora/boot.bin.next\0')
 
     def commit(self):
         arch.ArchUpdate(self.root, self.env).commit()
@@ -244,7 +244,7 @@ class ArchTrial(unittest.TestCase):
     def test_arm_keeps_the_live_image(self):
         self.trial_setup()
         self.apply()
-        self.assertEqual(self.marker.read_bytes(), b'armed\nm1n1/boot.bin.next\n')
+        self.assertEqual(self.marker.read_bytes(), b'armed\naurora/boot.bin.next\n')
         self.assertTrue(self.candidate.read_bytes().startswith(b'AURA'))
         self.assertEqual(self.target.read_bytes(), b'GOOD-STAGE2')
         self.assertEqual(self.backup.read_bytes(), b'OLDER-STAGE2')
@@ -276,7 +276,7 @@ class ArchTrial(unittest.TestCase):
         self.apply()
         payload = self.candidate.read_bytes()
         # aura spent the try, the candidate failed, the configured image booted.
-        self.marker.write_bytes(b'spent\nm1n1/boot.bin.next\n')
+        self.marker.write_bytes(b'spent\naurora/boot.bin.next\n')
         with patch('builtins.print') as log:
             self.commit()
         self.assertIn('fell back', log.call_args[0][0])
@@ -294,9 +294,9 @@ class ArchTrial(unittest.TestCase):
         self.commit()
         committed = self.target.read_bytes()
         # Same boot, same kernel release: the new aura still gets its trial.
-        self.put('/usr/lib/asahi-boot/m1n1.bin', b'AURA-2')
+        self.put('/usr/lib/aurora-boot/aura.bin', b'AURA-2')
         self.apply()
-        self.assertEqual(self.marker.read_bytes(), b'armed\nm1n1/boot.bin.next\n')
+        self.assertEqual(self.marker.read_bytes(), b'armed\naurora/boot.bin.next\n')
         self.assertTrue(self.candidate.read_bytes().startswith(b'AURA-2'))
         self.assertEqual(self.target.read_bytes(), committed)
         with patch.object(bootchain.subprocess, 'run') as command:
@@ -358,14 +358,14 @@ class ArchTrial(unittest.TestCase):
         self.put('/usr/share/aura/monitor-free', b'')
         self.put('/proc/device-tree/compatible', b'apple,j700\0apple,t8140\0')
         self.kernel(self.RELEASE, board='j700', pkgbase='linux-aurora')
-        ctxr = self.put('/esp/m1n1/boot-ctxr.bin', b'GOOD-CTXR')
+        ctxr = self.put('/esp/aurora/boot-ctxr.bin', b'GOOD-CTXR')
         candidate = ctxr.with_name('boot-ctxr.bin.next')
         self.apply()
-        self.assertEqual(self.marker.read_bytes(), b'armed\nm1n1/boot-ctxr.bin.next\n')
+        self.assertEqual(self.marker.read_bytes(), b'armed\naurora/boot-ctxr.bin.next\n')
         self.assertNotIn(self.dtb('j413', 1), candidate.read_bytes())
         payload = candidate.read_bytes()
-        self.marker.write_bytes(b'spent\nm1n1/boot-ctxr.bin.next\n')
-        self.put('/proc/device-tree/chosen/aurora,trial', b'm1n1/boot-ctxr.bin.next\0')
+        self.marker.write_bytes(b'spent\naurora/boot-ctxr.bin.next\n')
+        self.put('/proc/device-tree/chosen/aurora,trial', b'aurora/boot-ctxr.bin.next\0')
         self.sane()
         self.commit()
         self.assertEqual(ctxr.read_bytes(), payload)

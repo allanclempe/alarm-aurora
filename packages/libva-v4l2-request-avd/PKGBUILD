@@ -36,9 +36,11 @@ check() {
 
 package() {
   meson install -C build --destdir "$pkgdir"
-  ln -s v4l2_request_drv_video.so "$pkgdir/usr/lib/dri/asahi_drv_video.so"
   # Aurora kernels name the AGX render node driver "aurora".
   ln -s v4l2_request_drv_video.so "$pkgdir/usr/lib/dri/aurora_drv_video.so"
+  # LEGACY-ASAHI(2027-02-28): libva picks the driver by the DRM driver name, which
+  # kernels from before the rename report as asahi.
+  ln -s v4l2_request_drv_video.so "$pkgdir/usr/lib/dri/asahi_drv_video.so"
   install -Dm644 "libva-v4l2_request-$_commit/COPYING" \
     "$pkgdir/usr/share/licenses/$pkgname/COPYING"
   install -Dm644 "libva-v4l2_request-$_commit/docs/SUPPORT.md" \

@@ -31,7 +31,7 @@ class KernelConfigTests(unittest.TestCase):
 
     def test_hardware_has_one_source(self):
         recipe = (KERNEL / 'PKGBUILD').read_text()
-        self.assertIn('arch/arm64/configs/asahi.config', recipe)
+        self.assertIn('arch/arm64/configs/aurora.config', recipe)
         self.assertNotIn('common.config', recipe)
         self.assertFalse((KERNEL / 'common.config').exists())
 

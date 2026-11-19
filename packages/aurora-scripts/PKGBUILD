@@ -1,0 +1,130 @@
+# Aurora's maintenance scripts for Arch Linux ARM.
+#
+# The ESP helpers (functions.sh), the firmware updater, the mkinitcpio hook,
+# update-grub, first-boot and the macsmc battery and SDHCI units started as
+# asahi-alarm's asahi-scripts 20261023 (https://github.com/asahi-alarm/asahi-scripts,
+# MIT, see LICENSE), with the unit mode fix from its #75. They are kept here
+# under Aurora names: the device tree property they read is
+# aurora,efi-system-partition and aura's Stage 2 lives under aurora/ on the ESP,
+# with the old names read only as transitional fallbacks.
+#
+# update-aura is Fedora's trial-then-commit Stage 2 updater
+# (aurora-silicon/fedora-aurora#193, #207, #232, #251): bootchain.py and test_bootchain.py are
+# fedora-aurora's packages/update-aura files, as are the units and the preset;
+# bootchain_arch.py only gives them Arch's paths. A kernel update composes
+# <stage2>.next, arms aura's one-shot aura-try and keeps the live image until
+# aurora-stage2-commit.service accepts the trial boot. 95-aura-install.hook also
+# runs on a kernel removal. Each composed Stage 2 goes through aurora-secboot's
+# "stage2 hook" when that is installed, which signs it with the owner's Stage 2
+# key for an owner-key Stage 1; the stage2-sign-hook marker tells aurora-secboot
+# stage1 build so.
+pkgname=aurora-scripts
+pkgver=20261023
+pkgrel=10
+pkgdesc='Aurora maintenance scripts: Stage 2 updater, ESP firmware and initramfs hook'
+arch=('any')
+url='https://github.com/aurora-silicon/alarm-aurora'
+license=('MIT')
+depends=('bash' 'coreutils' 'dtc' 'gzip' 'python' 'util-linux')
+checkdepends=('dtc' 'python')
+# aura requires aurora-stage2-ctxr-slot: an aura without the monitor must never
+# reach boot.bin through a stock updater, whatever its version. The kernel,
+# aura and U-Boot require aurora-stage2-trial, this trial-aware updater.
+# LEGACY-ASAHI(2027-02-28): takes over the package of the old name.
+provides=('aurora-stage2-ctxr-slot=1' 'aurora-stage2-trial=1' "asahi-scripts=$pkgver")
+# aura and U-Boot from before the rename install their images under the old
+# directory name, which update-aura no longer reads.
+conflicts=('asahi-scripts' 'aura<1.0.0b13.1-2' 'uboot-aurora<2026.07.aurora11-2')
+replaces=('asahi-scripts')
+source=(
+        LICENSE
+        functions.sh
+        aurora-fwupdate
+        update-grub
+        first-boot
+        first-boot.service
+        initcpio-install
+        initcpio-hook
+        initcpio-install-legacy
+        macsmc-battery-charge-control-end-threshold.path
+        macsmc-battery-charge-control-end-threshold.service
+        93-macsmc-battery-charge-control.rules
+        65-autosuspend-override-aurora-sdhci.hwdb
+        update-aura
+        95-aura-install.hook
+        bootchain.py
+        bootchain_arch.py
+        test_bootchain.py
+        test_bootchain_arch.py
+        aurora-stage2-commit
+        aurora-stage2-commit.service
+        aurora-stage2-guard.service
+        aurora-stage2-guard.timer
+        90-aurora-stage2.preset)
+install=aurora-scripts.install
+sha256sums=('6a4ce06ab14079af339a8e30570a8dc175ffb8d0b5fb6e2c159b22283450639b'
+            'b6528493df68e045bd38f6cfe909e56eec243bb79fe7b6a30989b65daa4f502d'
+            '886852e418913718e28b4ce93c66989aa1f11e17453729cd59daa701736879f6'
+            '6b479ae78e10cadc430100fdb55cd3c4c18cc16a85aab02c83509e3942a46485'
+            '868f32b3018cba321dc50ebac34dfb7a47b66ab37116d73d6ab4d06d94d2ca19'
+            '39415cd11adba51479de000e54058d15ef74d7dc3ddb744726f1e38fceebd79c'
+            '5dd598dac961b34bbf8d5c56a73807719077bd6422788f514f88579bea1db9bc'
+            '2a944e3707deb0ae9dbb7f05935d2d52e9c01963716d00e752e0534fd1f07782'
+            '9bbcfe62bd4cda9c28ea71174d12a556a37c37ce95427b6715094e94df0ba6c5'
+            'fccf03aa74c4247f04e905700e8d8d0a39a18be4086c9f8a1b6ebfb35bb9c25d'
+            'fb26a61a0157b1dd3ccbe6437dc25477717482c45da1f2113f0f034f69b8734c'
+            'f6d5612bb79c76c880c1e9ac67022888337f5e6591ac8f0610f33478a6ed3115'
+            'c0766d287f7535b3249380b5a0de76c96da2f34e38d0713b6dcafd2ad4d184e3'
+            'de39e499f43d599a6eb05315f116f5a3f55428b7dc67d2593b620e42de6c8e8c'
+            '15c42d0f4aaaa16a65a703484d6a573965798e13fb4f5a992a604c3fc55ed85c'
+            'a3218b113005ffe09da3da124db0277a9cbd3b0c9dc1ebf333a1fbbf4a851268'
+            '01258df4b42d949e696431e51c27bad463a5cce4a67b0980cac11b0423a1fc93'
+            'e18eab10101909df50ebd3df79e9565bf9543107f58663571375c94a4c43a33b'
+            '38d8cfeb898752166d59da3667fa90b1248a5ffb23550cafad7e6f7fbdb6bd1f'
+            '83882e270fbf84d59080c418933d0f25a27f1db594726e6816436ba3a8fdf368'
+            '351b305d08d164b6d6532a294c4d30dd3db30ac27f61d1578b2d4548e93f69db'
+            '928be314b2b5a6d44ef95ff974074ed6aea3be0e2f3a7256298b0b3e1b15a46f'
+            '8bff7e48405ab6ea7472946dbbcf4d037182d386e8aef86851480a75510a5aa8'
+            '5a75c10decc6f75a8c3b917461052611f9c629644dc6345191c3ab0a63bcd4b2')
+
+check() {
+  cd "${srcdir}"
+
+  python3 test_bootchain.py
+  python3 test_bootchain_arch.py
+}
+
+package() {
+  cd "${srcdir}"
+
+  install -Dm755 -t "$pkgdir/usr/bin" aurora-fwupdate update-aura update-grub first-boot
+  # LEGACY-ASAHI(2027-02-28): the updater's old command name, for scripts written before the rename.
+  ln -s update-aura "$pkgdir/usr/bin/update-m1n1"
+  install -Dm644 functions.sh "$pkgdir/usr/share/aurora-scripts/functions.sh"
+  install -d "$pkgdir/usr/lib/firmware/vendor"
+  install -Dm644 initcpio-install "$pkgdir/usr/lib/initcpio/install/aurora"
+  install -Dm644 initcpio-hook "$pkgdir/usr/lib/initcpio/hooks/aurora"
+  install -Dm644 initcpio-install-legacy "$pkgdir/usr/lib/initcpio/install/asahi"
+  install -Dm644 first-boot.service "$pkgdir/usr/lib/systemd/system/first-boot.service"
+  install -d "$pkgdir/usr/lib/systemd/system/multi-user.target.wants"
+  ln -s /usr/lib/systemd/system/first-boot.service \
+    "$pkgdir/usr/lib/systemd/system/multi-user.target.wants/first-boot.service"
+  install -Dm644 -t "$pkgdir/usr/lib/systemd/system" \
+    macsmc-battery-charge-control-end-threshold.path \
+    macsmc-battery-charge-control-end-threshold.service
+  install -Dm644 93-macsmc-battery-charge-control.rules \
+    "$pkgdir/usr/lib/udev/rules.d/93-macsmc-battery-charge-control.rules"
+  install -Dm644 65-autosuspend-override-aurora-sdhci.hwdb \
+    "$pkgdir/usr/lib/udev/hwdb.d/65-autosuspend-override-aurora-sdhci.hwdb"
+  install -Dm644 95-aura-install.hook "$pkgdir/usr/share/libalpm/hooks/95-aura-install.hook"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+
+  install -Dm644 -t "$pkgdir/usr/libexec/aurora" bootchain.py bootchain_arch.py
+  install -Dm755 aurora-stage2-commit "$pkgdir/usr/libexec/aurora/aurora-stage2-commit"
+  install -Dm644 -t "$pkgdir/usr/lib/systemd/system" aurora-stage2-commit.service \
+    aurora-stage2-guard.service aurora-stage2-guard.timer
+  install -Dm644 90-aurora-stage2.preset "$pkgdir/usr/lib/systemd/system-preset/90-aurora-stage2.preset"
+  # aurora-secboot stage1 build --enforce looks for this marker before it builds
+  # a Stage 1 that refuses unsigned Stage 2s.
+  install -Dm644 /dev/null "$pkgdir/usr/share/aurora/stage2-sign-hook"
+}

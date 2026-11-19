@@ -14,7 +14,7 @@ pacman -Sw --noconfirm --cachedir "$proof/stock" mesa opencl-mesa vulkan-asahi v
 # Preserve original signed archive names inside one portable evidence file.
 tar -cf "$proof/stock-packages.tar" -C "$proof" stock
 pacman -Q | sort > "$proof/before.txt"
-files=(/usr/lib/libvulkan_lvp.so /usr/lib/libvulkan_asahi.so /usr/lib/libRusticlOpenCL.so.1.0.0
+files=(/usr/lib/libvulkan_lvp.so /usr/lib/libvulkan_aurora.so /usr/lib/libRusticlOpenCL.so.1.0.0
        /usr/include/gbm.h /usr/lib/pkgconfig/gbm.pc /etc/OpenCL/vendors/rusticl.icd)
 sha256sum "${files[@]}" > "$proof/before.sha256"
 # Local unsigned candidates are permitted only by this disposable test config.
@@ -32,7 +32,7 @@ pacman -T 'opencl-driver' 'opencl-mesa' 'opencl-rusticl-mesa' 'libgbm.so' 'mesa'
 test -f /usr/lib/libgbm.so
 test -f /usr/include/gbm.h
 pkg-config --exists gbm egl
-strings /usr/lib/libvulkan_asahi.so | grep -F "(git-${commit:0:10}), Borealis"
+strings /usr/lib/libvulkan_aurora.so | grep -F "(git-${commit:0:10}), Borealis"
 ldd /usr/lib/libRusticlOpenCL.so.1.0.0 > "$proof/rusticl-ldd.txt"
 nomatch -F 'not found' "$proof/rusticl-ldd.txt"
 # Enumerating without a GPU still loads the real ICD and Rusticl platform.

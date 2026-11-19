@@ -12,10 +12,10 @@ import sys
 import unittest
 
 sys.dont_write_bytecode = True
-PACKAGE = Path(__file__).resolve().parents[1] / 'packages/asahi-scripts'
+PACKAGE = Path(__file__).resolve().parents[1] / 'packages/aurora-scripts'
 modules = []
 for name in ('test_bootchain', 'test_bootchain_arch'):
-    spec = importlib.util.spec_from_file_location(f'asahi_scripts_{name}', PACKAGE / f'{name}.py')
+    spec = importlib.util.spec_from_file_location(f'aurora_scripts_{name}', PACKAGE / f'{name}.py')
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     modules.append(module)

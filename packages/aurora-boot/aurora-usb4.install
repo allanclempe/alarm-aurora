@@ -1,5 +1,5 @@
 #!/bin/bash
-# The asahi hook carries the Type-C port controllers; carry their
+# The aurora hook carries the Type-C port controllers; carry their
 # USB4/Thunderbolt router too, so the ports find it when they probe. udev
 # loads it. MODULES can't hold it: the systemd hook copies MODULES into
 # modules-load.d verbatim, "?" suffix included.

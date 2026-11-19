@@ -1,4 +1,4 @@
-# Aurora's copy of asahi-scripts' hook: it also runs after a kernel removal,
+# Runs update-aura after kernel, aura and U-Boot changes, and also after a kernel removal,
 # so dropping a kernel that needs an older DT ABI generation lets the newest
 # kernel's trees through, as Fedora's kernel-install remove does.
 [Trigger]
@@ -8,9 +8,9 @@ Operation = Upgrade
 Operation = Remove
 Target = usr/lib/modules/*/dtbs/*
 Target = usr/lib/modules/*/dtb-abi
-Target = usr/lib/asahi-boot/*
+Target = usr/lib/aurora-boot/*
 
 [Action]
-Description = Updating m1n1 image...
+Description = Updating aura Stage 2 image...
 When = PostTransaction
-Exec = /usr/bin/update-m1n1
+Exec = /usr/bin/update-aura

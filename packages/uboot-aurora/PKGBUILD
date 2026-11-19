@@ -1,6 +1,6 @@
 pkgname=uboot-aurora
 pkgver=2026.07.aurora11
-pkgrel=1
+pkgrel=2
 pkgdesc='Aurora common Apple Silicon U-Boot with Neo MTP handoff'
 arch=('aarch64')
 groups=('aurora-platform-apple-silicon')
@@ -22,9 +22,9 @@ build() {
 package() {
   # A new U-Boot reaches Stage 2 through the updater's aura-try trial.
   depends=('aurora-stage2-trial')
-  install -Dm644 u-boot/build-aurora/u-boot-nodtb.bin "$pkgdir/usr/lib/asahi-boot/u-boot-nodtb.bin"
-  install -d "$pkgdir/usr/lib/asahi-boot-j700"
-  ln -s ../asahi-boot/u-boot-nodtb.bin "$pkgdir/usr/lib/asahi-boot-j700/u-boot-nodtb.bin"
+  install -Dm644 u-boot/build-aurora/u-boot-nodtb.bin "$pkgdir/usr/lib/aurora-boot/u-boot-nodtb.bin"
+  install -d "$pkgdir/usr/lib/aurora-boot-j700"
+  ln -s ../aurora-boot/u-boot-nodtb.bin "$pkgdir/usr/lib/aurora-boot-j700/u-boot-nodtb.bin"
   install -Dm644 u-boot/Licenses/gpl-2.0.txt "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
   # DTBs come from linux-aurora; generated u-boot.dtb is the default J274 tree.
 }
