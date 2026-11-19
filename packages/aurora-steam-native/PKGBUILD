@@ -5,7 +5,7 @@ pkgbase=aurora-steam-native
 pkgname=(aurora-steam-native steam)
 epoch=1
 pkgver=0.r202610301134.c06f610e360
-pkgrel=1
+pkgrel=2
 pkgdesc="Valve's native ARM64 Steam client in a 4 KiB page process tree"
 arch=('any')
 url='https://github.com/aurora-silicon/aurora-steam-native'
@@ -41,7 +41,10 @@ check() {
 }
 
 package_aurora-steam-native() {
-  depends=('aurora-userpages' 'python' 'gtk2' 'fex-emu')
+  # Valve's runtime bundles libibus and lsof for x86 only; the ARM64 client
+  # takes them from the host (steamwebhelper links libibus-1.0.so.5, the
+  # client runs lsof for its web UI transport).
+  depends=('aurora-userpages' 'python' 'gtk2' 'fex-emu' 'libibus' 'lsof')
   optdepends=('mesa-aurora-fex-guest: Aurora Mesa for x86 titles run by FEX'
               'vulkan-aurora: Vulkan for Steam and native titles'
               'python-gobject: Aurora Play' 'gtk4: Aurora Play' 'libadwaita: Aurora Play'
