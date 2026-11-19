@@ -2,11 +2,3 @@
 pre_remove() {
   /usr/libexec/aurora/touchid-pam --remove || :
 }
-
-# The greeter unit enables the refresh unit with it (Also=). A greeter unit
-# enabled before the refresh unit existed gets it here, once.
-post_upgrade() {
-  if systemctl --quiet is-enabled aurora-sep-greeter-fingerprint.service 2>/dev/null; then
-    systemctl --no-reload enable aurora-sep-greeter-refresh.service >/dev/null 2>&1 || :
-  fi
-}
