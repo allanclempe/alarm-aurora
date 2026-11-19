@@ -3,6 +3,8 @@ Operation = Install
 Operation = Upgrade
 Type = Path
 Target = etc/default/grub.d/40-aurora-console.cfg
+# 45-aurora-mte.cfg is gone since 20261018-19. Kept so that, with a Remove
+# operation, its removal regenerates grub.cfg without its arm64.nomte.
 Target = etc/default/grub.d/45-aurora-mte.cfg
 Target = etc/default/grub.d/50-aurora-user4k.cfg
 Target = usr/lib/modules/*/vmlinuz
