@@ -1,6 +1,8 @@
 [Trigger]
 Operation = Install
 Operation = Upgrade
+# Remove: 20261018-18 drops 45-aurora-mte.cfg, and its arm64.nomte must leave grub.cfg too.
+Operation = Remove
 Type = Path
 Target = etc/default/grub.d/40-aurora-console.cfg
 Target = etc/default/grub.d/45-aurora-mte.cfg

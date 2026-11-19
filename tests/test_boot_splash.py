@@ -104,6 +104,20 @@ class BootSplashTests(unittest.TestCase):
         self.assertIn("[ -f /boot/grub/grub.cfg ] && [ -x /usr/bin/grub-mkconfig ] || exit 0; "
                       "exec /usr/bin/grub-mkconfig -o /boot/grub/grub.cfg'", hook)
 
+    def test_grub_cmdline_carries_no_arm64_nomte(self):
+        # aura reserves the MTE tag store, and the kernel keeps MTE off by itself
+        # when it is not reserved: no drop-in adds arm64.nomte.
+        for dropin in BOOT.glob('*.cfg'):
+            self.assertNotIn('nomte', dropin.read_text(), dropin.name)
+        self.assertFalse((BOOT/'45-aurora-mte.cfg').exists())
+        self.assertNotIn('45-aurora-mte.cfg', (BOOT/'PKGBUILD').read_text())
+        # Upgrading from 20261018-17 deletes /etc/default/grub.d/45-aurora-mte.cfg;
+        # pacman counts a file an upgrade drops as Remove, and grub.cfg must lose
+        # the argument with it.
+        hook = (BOOT/'aurora-grub.hook').read_text()
+        self.assertIn('\nOperation = Remove\n', hook)
+        self.assertIn('\nTarget = etc/default/grub.d/45-aurora-mte.cfg\n', hook)
+
 
 if __name__ == '__main__':
     unittest.main()
