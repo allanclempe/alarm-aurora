@@ -1,6 +1,6 @@
 pkgname=aurora-sep
 pkgver=1
-pkgrel=26
+pkgrel=27
 pkgdesc='SEP trusted-key and fingerprint integration for Aurora'
 arch=('any')
 groups=('aurora-platform-apple-silicon')
@@ -11,11 +11,11 @@ install=aurora-sep.install
 # the Plasma power-button default is the owner's to edit.
 backup=('etc/xdg/powerdevilrc')
 source=('load-driver' 'aurora-sep.service' 'fprintd-aurora.conf' 'README.md' 'XART-SAFETY.md' 'OS-IDENTITY.md' 'aurora-sep-ready' 'aurora-sep-ready.service' 'fprintd-no-timeout.conf.in' 'aurora-touchid-setup' 'extract-mesa-calibration' 'aurora-sep.timer' 'aurora-sep-load.conf' 'sensor-present' 'aurora-sep-greeter-fingerprint' 'aurora-sep-greeter-fingerprint.service' 'logind-aurora-sep.conf' 'provenance.json' 'aurora-touchid-setup.service' 'touchid-setup-needed' 'touchid-pam' 'aurora-sep-touchid-pam.hook' 'powerdevilrc' 'aurora-sep-modprobe.conf' 'aurora-sep' 'sleep-aurora-sep.conf' '20-aurora-suspend.conf')
-sha256sums=('278ca7b39853db6c5b122125e781de076206f8dd884830c5284ae9f26384c3cf'
+sha256sums=('fafa59e950677ab92dae1ca6497ac3c0a51d7bf1771aeacdc6e1ce925cc85550'
             'ef6e9067fe20b05c64bebe8445d1ea18b2f9800721522c3e84be21a2c47bb4eb'
             'e7898b3e409bde5b23453e22448b434dc4861642f575dab56148c78114f577b8'
-            '9e33c23b37d59802b7c4738731c5b58de787bb1b553de7a8e7963728d759259d'
-            '6986845ed02ead356c7c387134e6557c218e937d467b24c579991f28b1c87665'
+            '30404dceb663b8200ef91420d9e3a0e17a40501c2aedc27036026f1d4c11ad9d'
+            '2017785bd26fd78159459abdb6d4921c4b539ac0473be050b0250cb06f3e6b01'
             '52020e636e62b60f0c3e6251c3b67b8a8c409bff0486bc3463f356fd3073384b'
             'a1519e603e36043491e2a5c66fa0279fcc4df732247a6723ecbe8fb681b5fdfc'
             '7a20a5bf69b6fc7e60e70c4c20f5eb63ffdc41820d7d8213ec9085f527b4e6d0'
@@ -28,13 +28,13 @@ sha256sums=('278ca7b39853db6c5b122125e781de076206f8dd884830c5284ae9f26384c3cf'
             '5936eb76db666496a8700dade7ac6bcb3785b517958dcea10685690f1822c86f'
             'ffab97b20bfd5f0eb1ab641179a131843349cf16890fff0cf2d893f0b5681b37'
             '0695bd9ce4c207241db13c3ea07819a032d8213417021378f5015ab9317cde12'
-            'bd42b229194b1103a2f4e7bb45a11631186c1e66b722868ce2ddb5d42baa2085'
+            '887019db4d5e678fdfb6d65efe047b45b47a28ce82a8d8e58f9af8e467cc6f5a'
             '71305d392a68f623d351e0addf5a821fb0900b9a0fba7169c1ed62fd6bebe9ca'
             '371a0f8d874692a74581f884d7cc3db9e9e52fedaa7f099c0930a7c3a4080408'
             'e40e79ae7d9e54918078c620d425f59ac6ff201a706869637ddb4d4bca794d4c'
             'cbcac4487988d17c13290d093c5728306fee3212eb68332c7cb41e10cc068866'
             'c4a546ba81e435434caae8abd10f59bd583aa089108d4dac036e0efda8182181'
-            '2afed78be5e8e163de50be82dd74fd956113b56059487f83e32121f43d6002ec'
+            'bcafe4720813441af1bbdb7369cf0ddb841c178b5e67a2d9d2c55dd03ec64bc5'
             'f8a2eadd5b55be5aedda79e5d1a629b93f13a64fb4ebb8f280aa86d22b6d3a06'
             '124055c87272fbd27e904ee403720fef76922d051216f053a11f49b6bd9c41e8'
             'ec7cb0627f22287d5cb009a7016d07ce4a110a0f3a2db5357a212f9ac3fa1794')
