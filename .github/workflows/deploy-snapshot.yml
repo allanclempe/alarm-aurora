@@ -124,21 +124,3 @@ jobs:
         env:
           CHANNEL: ${{ inputs.channel }}
         run: python3 scripts/channel-site.py record --channel "$CHANNEL" --state channel-state.json
-
-  images:
-    # Optional (AUTO_IMAGES=true): rebuild the three images from the snapshot
-    # testing now serves. Payloads and catalog adoption remain separate steps.
-    needs: [assemble, record]
-    if: always() && needs.record.result == 'success' && inputs.channel == 'testing' && vars.AUTO_IMAGES == 'true'
-    runs-on: ubuntu-24.04
-    permissions:
-      actions: write
-    steps:
-      - env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ needs.assemble.outputs.tag }}
-        run: |
-          for profile in arch-minimal arch-kde arch-gnome; do
-            gh workflow run images.yml --repo "$GITHUB_REPOSITORY" --ref main -f profile="$profile" -f release-tag="$TAG"
-          done
-          echo "Dispatched images for $TAG." >> "$GITHUB_STEP_SUMMARY"

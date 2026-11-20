@@ -1,4 +1,6 @@
 """Guard source lockstep and exercise lifecycle behavior without a device."""
+import configparser
+import fnmatch
 import hashlib
 import importlib.util
 import json
@@ -62,6 +64,29 @@ class ParityTests(unittest.TestCase):
                                  'ATTR{[module/hid_magicmouse]parameters/haptic_press}="Y"'])
         pkgbuild = (directory / 'PKGBUILD').read_text()
         self.assertIn('"$pkgdir/usr/lib/udev/rules.d/64-aurora-trackpad-clicks.rules"', pkgbuild)
+
+    def test_trackpads_with_kernel_palm_sizes_drop_the_libinput_threshold(self):
+        # One section for every board whose hid-magicmouse marks palms by tool
+        # area itself (the T6041 MacBook Pros); libinput sees only the board
+        # compatible, so the boards are matched by a glob.
+        directory = ROOT / 'packages' / 'aurora-system-fixes'
+        quirks = configparser.ConfigParser(interpolation=None)
+        quirks.optionxform = str
+        quirks.read_string((directory / '60-aurora-trackpad-palms.quirks').read_text())
+        self.assertEqual(len(quirks.sections()), 1)
+        section = dict(quirks[quirks.sections()[0]])
+        self.assertEqual(section, {
+            'MatchUdevType': 'touchpad', 'MatchName': 'Apple*MTP*', 'MatchVendor': '0x05AC',
+            'MatchDeviceTree': 'apple,j61[46]c', 'AttrPalmSizeThreshold': '0'})
+        board = section['MatchDeviceTree']
+        for compatible in ('apple,j614c', 'apple,j616c'):
+            self.assertTrue(fnmatch.fnmatchcase(compatible, board), compatible)
+        # J616s and K116s palms come from the contact class only; other boards report none.
+        for compatible in ('apple,j614s', 'apple,j616s', 'apple,j575c', 'apple,j700', 'apple,j314s'):
+            self.assertFalse(fnmatch.fnmatchcase(compatible, board), compatible)
+        recipe = (directory / 'PKGBUILD').read_text()
+        self.assertIn('install -Dm644 60-aurora-trackpad-palms.quirks '
+                      '"$pkgdir/usr/share/libinput/60-aurora-trackpad-palms.quirks"', recipe)
 
     def test_reboot_watchdog_fits_the_apple_hardware_watchdog(self):
         # Same drop-in as Fedora's aurora-platform: the Apple SoC watchdog

@@ -131,8 +131,8 @@ backup files and a conflict without being listed.
 | `publish.yml` | after a main build and every 6 h (`AUTO_PUBLISH_TESTING`), manual | Resolves the newest qualifying build of every recipe (no run list), carries unchanged recipes from the newest snapshot, refuses version regressions, signs in `testing-signing`, releases `testing-YYYYMMDD.N` with an attestation; deploys to testing if `AUTO_DEPLOY_TESTING` or `deploy=yes` |
 | `deploy-snapshot.yml` | manual or called | Serves a snapshot on `testing` or `stable`; assembles the whole site (both channels), verifies every signature and attestation, compares with the live database, records `channels.json` on the `channels` branch |
 | `promote.yml` | manual | One click: `stable` gets what `testing` serves, after a `stable-promotion` reviewer approves |
-| `images.yml` | manual or after a testing deploy (`AUTO_IMAGES`) | Builds an image from a snapshot; `channel` sets the feed it follows |
-| `payload-after-images.yml` | after an image build (`AUTO_PAYLOADS`) | Signed payload release; catalog adoption stays manual |
+| `images.yml` | manual | Builds an image from a snapshot; `channel` sets the feed it follows |
+| `publish-payload.yml` | manual | Signed payload release from an image build; catalog adoption stays manual |
 
 ## Common tasks
 

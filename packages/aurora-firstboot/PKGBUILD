@@ -1,14 +1,14 @@
 pkgbase=aurora-firstboot
-pkgname=(aurora-firstboot aurora-power-budget aurora-secboot)
+pkgname=(aurora-firstboot aurora-power-budget aurora-gamemode aurora-secboot)
 pkgver=0.1.13
-pkgrel=5
+pkgrel=6
 pkgdesc='Aurora per-install root encryption and Linux owner setup'
 arch=('any')
 license=('MIT')
 url='https://github.com/aurora-silicon/aurora-platform'
-_commit=ad0411c90f50b743bca3f1c8083279f86a34f2f8
+_commit=ddf5285e116b3551ed2b025112f86effaadf299d
 source=("$pkgbase-$_commit.tar.gz::https://codeload.github.com/aurora-silicon/aurora-platform/tar.gz/$_commit")
-sha256sums=('17b7a084909462f0b6a32a355aee78f8ecfc2f26828b25b9509a36add8faab24')
+sha256sums=('fd6d1f03a1d64709611a600d885f5857ec71f3e2f6f2a3eead76d06733dfd644')
 package_aurora-firstboot() {
   depends=('bash' 'cryptsetup>=2.8' 'btrfs-progs' 'util-linux' 'coreutils' 'systemd' 'python' 'shadow' 'sudo' 'kbd' 'procps-ng' 'mkinitcpio')
   make -C "aurora-platform-$_commit" install-common install-mkinitcpio DESTDIR="$pkgdir" PREFIX=/usr
@@ -26,6 +26,13 @@ package_aurora-power-budget() {
   install -Dm644 /dev/stdin "$pkgdir/usr/lib/systemd/system-preset/90-aurora-power-budget.preset" <<'EOF'
 enable aurora-power-budget.service
 EOF
+}
+package_aurora-gamemode() {
+  pkgdesc='GameMode defaults for Apple silicon: games on the P cores, schedutil kept'
+  depends=('gamemode')
+  backup=('etc/gamemode.ini')
+  make -C "aurora-platform-$_commit" install-gamemode DESTDIR="$pkgdir" PREFIX=/usr SYSCONFDIR=/etc
+  install -Dm644 "aurora-platform-$_commit/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }
 package_aurora-secboot() {
   pkgdesc='Signed unified kernel images for the Aurora secure boot path'
