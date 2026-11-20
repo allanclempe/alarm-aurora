@@ -11,11 +11,11 @@ install=aurora-sep.install
 # the Plasma power-button default is the owner's to edit.
 backup=('etc/xdg/powerdevilrc')
 source=('load-driver' 'aurora-sep.service' 'fprintd-aurora.conf' 'README.md' 'XART-SAFETY.md' 'OS-IDENTITY.md' 'aurora-sep-ready' 'aurora-sep-ready.service' 'fprintd-no-timeout.conf.in' 'aurora-touchid-setup' 'extract-mesa-calibration' 'aurora-sep.timer' 'aurora-sep-load.conf' 'sensor-present' 'aurora-sep-greeter-fingerprint' 'aurora-sep-greeter-fingerprint.service' 'logind-aurora-sep.conf' 'provenance.json' 'aurora-touchid-setup.service' 'touchid-setup-needed' 'touchid-pam' 'aurora-sep-touchid-pam.hook' 'powerdevilrc' 'aurora-sep-modprobe.conf' 'aurora-sep' 'sleep-aurora-sep.conf' '20-aurora-suspend.conf')
-sha256sums=('1d31c8244dee07f9c9d16f9066688ce77390a23d7010477dfe82d4c896863629'
+sha256sums=('e9b4758ae475df58fc1f087c77208b5e7ffd4bc02525ef2baed07c31ee9a0073'
             'ef6e9067fe20b05c64bebe8445d1ea18b2f9800721522c3e84be21a2c47bb4eb'
             'e7898b3e409bde5b23453e22448b434dc4861642f575dab56148c78114f577b8'
             '30404dceb663b8200ef91420d9e3a0e17a40501c2aedc27036026f1d4c11ad9d'
-            '67fd6a5daf9e4daeb94a2bbf13e66de46d09214019852b52ccd08bf5fff4adb2'
+            '9883c205078bb9fe468e9986de33346c24601176c0506b8bc9bfdc02ca7ad94c'
             '52020e636e62b60f0c3e6251c3b67b8a8c409bff0486bc3463f356fd3073384b'
             'a5937283ccd8f3c7e52ce740e1d06d90c4c2c1b20b6fb60b0e45afb1b566c62a'
             '7a20a5bf69b6fc7e60e70c4c20f5eb63ffdc41820d7d8213ec9085f527b4e6d0'
@@ -28,7 +28,7 @@ sha256sums=('1d31c8244dee07f9c9d16f9066688ce77390a23d7010477dfe82d4c896863629'
             '5936eb76db666496a8700dade7ac6bcb3785b517958dcea10685690f1822c86f'
             'ffab97b20bfd5f0eb1ab641179a131843349cf16890fff0cf2d893f0b5681b37'
             '0695bd9ce4c207241db13c3ea07819a032d8213417021378f5015ab9317cde12'
-            'dd7c9a857f5035f401cbce53a8758c21c42f6f7fba151fa2359d0e0e0336c75e'
+            '1d1ec583a2968fc3c0dcfb73258c4b7b139746f352ea49cd6b4b19bf785f63fa'
             '71305d392a68f623d351e0addf5a821fb0900b9a0fba7169c1ed62fd6bebe9ca'
             '371a0f8d874692a74581f884d7cc3db9e9e52fedaa7f099c0930a7c3a4080408'
             'e40e79ae7d9e54918078c620d425f59ac6ff201a706869637ddb4d4bca794d4c'
