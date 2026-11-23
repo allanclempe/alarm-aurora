@@ -1,6 +1,6 @@
 pkgname=aurora-firmware
 pkgver=20261018
-pkgrel=7
+pkgrel=9
 pkgdesc='Aurora target-device firmware and peripheral admission'
 arch=('any')
 license=('MIT')
