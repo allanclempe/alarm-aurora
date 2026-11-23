@@ -13,7 +13,7 @@ license=('GPL-2.0-only' 'MIT')
 _commit=9b59420299203805b213f7f65fbcba1d7690177f
 _plugin=e5aa51a41f963e73b5a67914cae3c916a83739f1
 depends=('bash' 'coreutils' 'iproute2' 'iputils' 'iw' 'openssl' 'polkit' 'procps-ng'
-         'python' 'python-libarchive-c' 'systemd' 'util-linux')
+         'python' 'python-ifaddr' 'python-libarchive-c' 'python-zeroconf' 'systemd' 'util-linux')
 optdepends=('networkmanager: keeps awdl0 unmanaged and settles the Wi-Fi MAC first'
             'python-pillow: the thumbnail an iPhone needs before it shows a prompt'
             'bluez: the advert that wakes a nearby Apple device'
