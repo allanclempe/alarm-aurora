@@ -5,8 +5,8 @@ boot hooks, Apple firmware, or Apple models. The Aurora kernel supplies the driv
 
 | Payload | Fedora | ALARM | NixOS |
 | --- | --- | --- | --- |
-| omarchy-ane-tools | 0.5.7-2 | 0.5.7-2 | 0.5.7 |
-| mil-hwx-compiler (mil-hwxc) | 0.3.1-1 | 0.3.1-1 | 0.3.1 |
+| omarchy-ane-tools | 0.5.13-1 | 0.5.13-1 | 0.5.13 |
+| mil-hwx-compiler (mil-hwxc) | 0.3.3-1 | 0.3.3-1 | 0.3.3 |
 | Tool commands | omarchy-ane-run, omarchy-ane-smoke, omarchy-ane-firmware-fetch | same | same |
 | Smoke fixtures | h13-anec/add/program-0.anec, h14-anec/add/program-0.anec | same | same |
 | Device permissions (every install, not these packages) | aurora-platform-core: accel group, 0660, session ACL, 70-aurora-accel.rules | aurora-system-fixes: same | platform module: same |
