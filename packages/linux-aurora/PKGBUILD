@@ -171,8 +171,11 @@ _package_kernel() {
   # committing them and checks the DT ABI generation.
   # The restored legacy interface needs the matching Asahi speaker graphs.
   # avd-fw: apple-avd loads apple/avd-fw-v*.bin and its queued transport needs
-  # queue ABI 2 with per-image codec VP pools (avd-fw 6756ca99 = 0.1.aurora3).
-  depends=(coreutils kmod initramfs $2 "aura>=$_aura_version" 'aurora-audio>=4.1.aurora2-12' 'avd-fw>=0.1.aurora3' aurora-stage2-trial aurora-userpages)
+  # queue ABI 2 with per-image codec VP pools (avd-fw 6756ca99). The T8122 (M3)
+  # device tree maps the CM3 SRAM at +0x90000 (linux#2586), which only the
+  # 64 KiB v4 image of avd-fw ea8ae7c8 (0.1.aurora4) fits: the older
+  # 0x12000-byte image fails the probe with -EINVAL.
+  depends=(coreutils kmod initramfs $2 "aura>=$_aura_version" 'aurora-audio>=4.1.aurora2-12' 'avd-fw>=0.1.aurora4' aurora-stage2-trial aurora-userpages)
   optdepends=('crda: to set the correct wireless channels of your country'
               'linux-firmware: firmware images needed for some devices')
   # No generic linux provide: on a shared aarch64 repository it would compete
