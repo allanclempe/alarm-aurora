@@ -48,6 +48,51 @@ class OverlayProvenanceTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'does not cover every asset'):
                     site.verify_attestations(directory, 'aurora-silicon/alarm-aurora', 'edge')
 
+    def test_frozen_base_uses_one_attested_release_and_exact_signer(self):
+        repo = 'aurora-silicon/alarm-aurora'
+        tag = 'testing-20261124.5'
+        revision, fingerprint = '1' * 40, '2' * 40
+        package = 'aura-1-aarch64.pkg.tar.zst'
+        package_hash = hashlib.sha256(b'package').hexdigest()
+        manifest = {'channel': 'testing', 'dry_run': False, 'architecture': 'aarch64',
+                    'signing_key': fingerprint, 'packages': [{'filename': package, 'sha256': package_hash}]}
+        for failure in (None, 'different database', 'missing package', 'duplicate package owner'):
+            with self.subTest(failure=failure), tempfile.TemporaryDirectory() as temporary:
+                directory = Path(temporary) / 'base'
+                artifacts = [] if failure == 'missing package' else [{'name': 'alarm-aura', 'packages': [package]}]
+                if failure == 'duplicate package owner':
+                    artifacts.append({'name': 'alarm-other', 'packages': [package]})
+                inputs = {'publishing_commit': revision, 'artifacts': artifacts}
+                files = {'manifest.json': json.dumps(manifest).encode(), 'publication-inputs.json': json.dumps(inputs).encode(),
+                         'aurora.db.tar.gz': b'database', 'aurora.db.tar.gz.sig': b'signature'}
+                hashes = {name: hashlib.sha256(data).hexdigest() for name, data in files.items()}
+                hashes[package] = package_hash
+                subjects = [{'name': name, 'digest': {'sha256': digest}} for name, digest in hashes.items()]
+                files['SHA256SUMS'] = ''.join(f'{digest}  {name}\n' for name, digest in hashes.items()).encode()
+                if failure == 'different database':
+                    files['aurora.db.tar.gz'] = b'different database'
+
+                def download(*_):
+                    for name, data in files.items():
+                        (directory / name).write_bytes(data)
+
+                with patch.object(site.lib, 'gh', side_effect=download), patch.object(site.subprocess, 'run') as command:
+                    command.return_value.stdout = json.dumps([{'verificationResult': {'statement': {'subject': subjects}}}])
+                    if failure:
+                        with self.assertRaises(ValueError):
+                            site.fetch_edge_base(repo, tag, directory, Path(temporary), fingerprint)
+                        continue
+                    result = site.fetch_edge_base(repo, tag, directory, Path(temporary), fingerprint)
+                    self.assertEqual(result, {'tag': tag, 'packaging_commit': revision,
+                                              'manifest_sha256': hashes['manifest.json'],
+                                              'database_sha256': hashes['aurora.db.tar.gz'],
+                                              'provenance_sha256': hashes['publication-inputs.json']})
+                    attestation, verification = [call.args[0] for call in command.call_args_list]
+                    self.assertIn('refs/heads/main', attestation)
+                    self.assertIn(revision, attestation)
+                    self.assertEqual(verification[-2:], [str(directory / 'aurora.db.tar.gz.sig'),
+                                                         str(directory / 'aurora.db.tar.gz')])
+
 LINUX = {'repository': 'aurora-silicon/linux', 'branch': 'aurora-edge', 'revision': '1' * 40, 'tree': '2' * 40}
 MESA = {'repository': 'aurora-silicon/mesa', 'branch': 'aurora-edge', 'revision': '3' * 40, 'tree': '4' * 40}
 PACMAN = """[options]
@@ -64,6 +109,10 @@ class OverlayTests(unittest.TestCase):
         for tag in ('testing-20261121.1', 'edge-latest', 'edge-20261121.1/x'):
             with self.subTest(tag=tag), self.assertRaises(ValueError):
                 edgelib.snapshot(tag)
+        self.assertEqual(edgelib.testing_snapshot('testing-20261124.5'), 'testing-20261124.5')
+        for tag in ('testing', 'testing-20261124.0', 'edge-20261124.5', 'testing-20261124.5/x'):
+            with self.subTest(tag=tag), self.assertRaises(ValueError):
+                edgelib.testing_snapshot(tag)
 
     def test_the_overlay_carries_only_kernel_and_mesa_packages(self):
         rows = [('linux-aurora', 'linux-aurora', '7.3.0.aurora1-43'),

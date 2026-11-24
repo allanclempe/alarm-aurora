@@ -9,6 +9,7 @@ moves only when the aurora-distributions Edge train that names it is adopted.
 import re
 
 TAG = re.compile(r'edge-[0-9]{8}\.[1-9][0-9]*')
+TESTING_TAG = re.compile(r'testing-[0-9]{8}\.[1-9][0-9]*')
 REVISION = re.compile(r'[0-9a-f]{40}')
 FEED = 'https://aurorasilicon.org/alarm-aurora/edge/aarch64'
 TESTING_FEED = 'https://aurorasilicon.org/alarm-aurora/testing/aarch64'
@@ -24,6 +25,12 @@ SECTION = '[{name}]\nSigLevel = Required DatabaseRequired\nServer = {server}\n\n
 def snapshot(tag):
     if not isinstance(tag, str) or not TAG.fullmatch(tag):
         raise ValueError('invalid immutable Edge snapshot tag: %r' % (tag,))
+    return tag
+
+
+def testing_snapshot(tag):
+    if not isinstance(tag, str) or not TESTING_TAG.fullmatch(tag):
+        raise ValueError('invalid immutable Testing base tag: %r' % (tag,))
     return tag
 
 

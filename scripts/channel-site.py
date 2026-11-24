@@ -51,28 +51,74 @@ def keyring(home):
     return home, fingerprint
 
 
-def verify_attestations(directory, repository, channel='testing'):
-    """A snapshot published with provenance must carry a valid attestation
-    whose subjects are exactly its assets. Older snapshots predate it."""
+def checksum_index(path):
+    listed = {}
+    for line in path.read_text().splitlines():
+        digest, name = line.split(maxsplit=1)
+        name = name.lstrip('*')
+        if name in listed:
+            raise ValueError(f'{path}: repeated checksum for {name}')
+        listed[name] = digest
+    return listed
+
+
+def verify_attestations(directory, repository, channel='testing', *, source_digest=None):
+    """Verify one release attestation for the full checksum index.
+
+    With a source digest, verify the downloaded metadata subset against that
+    index and require the exact main-branch publication source.
+    """
     sums = directory / 'SHA256SUMS'
     if not sums.exists():
         return 'none (snapshot predates attestations)'
-    listed = {}
-    for line in sums.read_text().splitlines():
-        digest, name = line.split(maxsplit=1)
-        listed[name.lstrip('*')] = digest
+    listed = checksum_index(sums)
     actual = {path.name: lib.sha256_file(path) for path in directory.iterdir() if path.name != 'SHA256SUMS'}
-    if listed != actual:
-        raise ValueError(f'{directory}: SHA256SUMS does not list exactly the downloaded assets')
+    if not actual.items() <= listed.items() or (source_digest is None and listed != actual):
+        raise ValueError(f'{directory}: SHA256SUMS does not match the downloaded assets')
+    source = ['--source-ref', 'refs/heads/main', '--source-digest', source_digest] if source_digest else []
     result = subprocess.run(['gh', 'attestation', 'verify', str(directory / 'manifest.json'), '--repo', repository,
                              '--signer-workflow', f'{repository}/{publisher(channel)}',
-                             '--deny-self-hosted-runners', '--format', 'json'],
+                             *source, '--deny-self-hosted-runners', '--format', 'json'],
                             check=True, capture_output=True, text=True)
     attestations = ({(s['name'], s['digest']['sha256']) for s in v['verificationResult']['statement']['subject']}
                     for v in json.loads(result.stdout))
     if not any(listed.items() <= subjects for subjects in attestations):
         raise ValueError(f'{directory}: the provenance attestation does not cover every asset')
     return 'verified'
+
+
+def fetch_edge_base(repository, tag, destination, home, fingerprint):
+    edgelib.testing_snapshot(tag)
+    destination.mkdir(parents=True)
+    archive = destination / 'aurora.db.tar.gz'
+    manifest_path = destination / 'manifest.json'
+    provenance_path = destination / 'publication-inputs.json'
+    lib.gh('release', 'download', tag, '--repo', repository, '--dir', str(destination),
+           '--pattern', manifest_path.name, '--pattern', 'SHA256SUMS',
+           '--pattern', archive.name, '--pattern', archive.name + '.sig', '--pattern', provenance_path.name)
+    provenance = json.loads(provenance_path.read_text())
+    revision = provenance['publishing_commit']
+    if not edgelib.REVISION.fullmatch(revision) \
+            or verify_attestations(destination, repository, source_digest=revision) != 'verified':
+        raise ValueError(f'{tag}: the Edge base requires hosted provenance')
+    manifest = json.loads(manifest_path.read_text())
+    if (manifest['channel'] != 'testing' or manifest['dry_run'] is not False
+            or manifest['architecture'] != 'aarch64' or manifest['signing_key'] != fingerprint):
+        raise ValueError(f'{tag}: invalid signed Edge base manifest')
+    packages = {item['filename']: item['sha256'] for item in manifest['packages']}
+    if not packages or len(packages) != len(manifest['packages']) \
+            or not packages.items() <= checksum_index(destination / 'SHA256SUMS').items():
+        raise ValueError(f'{tag}: the Edge base checksum index does not cover every package')
+    owners = {}
+    for artifact in provenance['artifacts']:
+        for name in artifact['packages']:
+            owners.setdefault(name, set()).add(artifact['name'])
+    if any(len(owners.get(name, ())) != 1 for name in packages):
+        raise ValueError(f'{tag}: the Edge base package build records are incomplete or ambiguous')
+    subprocess.run(['gpg', '--homedir', str(home), '--batch', '--verify', str(archive) + '.sig', str(archive)],
+                   check=True, capture_output=True)
+    return {'tag': tag, 'packaging_commit': revision, 'manifest_sha256': lib.sha256_file(manifest_path),
+            'database_sha256': lib.sha256_file(archive), 'provenance_sha256': lib.sha256_file(provenance_path)}
 
 
 def fetch_snapshot(repository, tag, destination, home, fingerprint, channel='testing'):
@@ -104,17 +150,17 @@ def fetch_snapshot(repository, tag, destination, home, fingerprint, channel='tes
     return provenance
 
 
-def check_closure(site):
-    """Every deploy (edge, or testing while an overlay is served) keeps the overlay closed
-    over the Testing feed and the Arch Linux ARM repositories it is installed with. A
-    missing or unreadable database fails the deploy."""
+def check_closure(site, base_database=None):
+    """Validate the overlay against an Aurora base and the Arch Linux ARM feeds."""
+    if base_database is None:
+        base_database = Path(site) / 'testing/aarch64/aurora.db.tar.gz'
     closure = subprocess.run([sys.executable, str(ROOT / 'scripts/check-edge-closure.py'),
                               '--overlay', str(Path(site) / 'edge/aarch64/aurora-edge.db.tar.gz'),
-                              '--testing', str(Path(site) / 'testing/aarch64/aurora.db.tar.gz')],
+                              '--testing', str(base_database)],
                              capture_output=True, text=True)
     if closure.returncode:
         print(closure.stdout + closure.stderr, file=sys.stderr)
-        raise SystemExit('The Edge overlay does not close over the feeds this deploy would serve.')
+        raise SystemExit('The Edge overlay does not close over the selected Aurora base and upstream feeds.')
 
 
 def live_database(site_url, channel, work, home):
@@ -173,9 +219,16 @@ def assemble(args):
         if target[channel]:
             provenance[channel] = fetch_snapshot(repository, target[channel], site / channel / 'aarch64',
                                                  home, fingerprint, channel)
-    if args.channel == 'edge':
+    if target.get('edge'):
         sources = json.loads((site / 'edge/aarch64/edge-sources.json').read_text())
-        edgelib.edge_gate(json.loads(Path(args.edge_train).read_text()), tag, sources)
+        if args.channel == 'edge':
+            edgelib.edge_gate(json.loads(Path(args.edge_train).read_text()), tag, sources)
+        base = sources.get('base')
+        if base is not None:
+            directory = Path(args.work) / 'edge-base'
+            if fetch_edge_base(repository, base['tag'], directory, home, fingerprint) != base:
+                raise ValueError('the signed Edge base differs from the overlay source record')
+            check_closure(site, directory / 'aurora.db.tar.gz')
     if target.get('edge') and target.get('testing'):
         check_closure(site)
     previous = current[args.channel]
@@ -250,10 +303,19 @@ def main():
     store = commands.add_parser('record')
     store.add_argument('--channel', choices=CHANNELS, required=True)
     store.add_argument('--state', required=True)
+    base = commands.add_parser('edge-base', help='verify and record the immutable Edge base')
+    base.add_argument('--tag', required=True)
+    base.add_argument('--work', type=Path, required=True)
     args = parser.parse_args()
     if not re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', args.repository):
         parser.error('--repository owner/name is required')
-    assemble(args) if args.command == 'assemble' else record(args)
+    if args.command == 'edge-base':
+        home, fingerprint = keyring(args.work / 'gnupg')
+        print(json.dumps(fetch_edge_base(args.repository, args.tag, args.work / 'edge-base', home, fingerprint)))
+    elif args.command == 'assemble':
+        assemble(args)
+    else:
+        record(args)
 
 
 if __name__ == '__main__':
