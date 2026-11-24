@@ -68,11 +68,9 @@ def verify_attestations(directory, repository, channel='testing'):
                              '--signer-workflow', f'{repository}/{publisher(channel)}',
                              '--deny-self-hosted-runners', '--format', 'json'],
                             check=True, capture_output=True, text=True)
-    subjects = set()
-    for verification in json.loads(result.stdout):
-        for subject in verification['verificationResult']['statement']['subject']:
-            subjects.add((subject['name'], subject['digest']['sha256']))
-    if not set(listed.items()) <= subjects:
+    attestations = ({(s['name'], s['digest']['sha256']) for s in v['verificationResult']['statement']['subject']}
+                    for v in json.loads(result.stdout))
+    if not any(listed.items() <= subjects for subjects in attestations):
         raise ValueError(f'{directory}: the provenance attestation does not cover every asset')
     return 'verified'
 
@@ -101,8 +99,8 @@ def fetch_snapshot(repository, tag, destination, home, fingerprint, channel='tes
     if (manifest.get('channel', 'testing') == 'edge') != (channel == 'edge'):
         raise ValueError(f'{tag}: an Edge overlay serves only the edge channel, and only it')
     provenance = verify_attestations(destination, repository, channel)
-    if channel == 'edge' and provenance != 'verified':
-        raise ValueError(f'{tag}: the Edge overlay requires hosted provenance')
+    if channel == 'edge' and (provenance != 'verified' or not (destination / 'edge-sources.json').is_file()):
+        raise ValueError(f'{tag}: the Edge overlay requires a source record and hosted provenance')
     return provenance
 
 
@@ -164,12 +162,7 @@ def assemble(args):
         # Every distribution's Edge feed moves with the adopted aurora-distributions train.
         if not args.edge_train:
             raise SystemExit('An Edge deploy needs the adopted Edge train record (--edge-train).')
-        gate = Path(args.work) / 'edge-gate'
-        gate.mkdir(parents=True)
-        lib.gh('release', 'download', edgelib.snapshot(tag), '--repo', repository, '--dir', str(gate),
-               '--pattern', 'edge-sources.json')
-        edgelib.edge_gate(json.loads(Path(args.edge_train).read_text()), tag,
-                          json.loads((gate / 'edge-sources.json').read_text()))
+        edgelib.snapshot(tag)
     target = dict(current, **{args.channel: tag})
     site = Path(args.site)
     if site.exists():
@@ -180,6 +173,9 @@ def assemble(args):
         if target[channel]:
             provenance[channel] = fetch_snapshot(repository, target[channel], site / channel / 'aarch64',
                                                  home, fingerprint, channel)
+    if args.channel == 'edge':
+        sources = json.loads((site / 'edge/aarch64/edge-sources.json').read_text())
+        edgelib.edge_gate(json.loads(Path(args.edge_train).read_text()), tag, sources)
     if target.get('edge') and target.get('testing'):
         check_closure(site)
     previous = current[args.channel]

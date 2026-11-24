@@ -5,7 +5,9 @@ import json
 from pathlib import Path
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
@@ -22,6 +24,29 @@ def module(name, path):
 
 site = module('edge_channel_site', 'scripts/channel-site.py')
 proof = module('edge_image_proof', 'scripts/edge-image-proof.py')
+
+
+class OverlayProvenanceTests(unittest.TestCase):
+    def test_one_attestation_covers_the_entire_downloaded_snapshot(self):
+        files = {'manifest.json': b'manifest', 'edge-sources.json': b'sources', 'aurora-edge.db': b'database'}
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            for name, data in files.items():
+                (directory / name).write_bytes(data)
+            hashes = {name: hashlib.sha256(data).hexdigest() for name, data in files.items()}
+            (directory / 'SHA256SUMS').write_text(''.join(f'{digest}  {name}\n' for name, digest in hashes.items()))
+            subjects = [{'name': name, 'digest': {'sha256': digest}} for name, digest in hashes.items()]
+            complete = {'verificationResult': {'statement': {'subject': subjects}}}
+            with patch.object(site.subprocess, 'run') as command:
+                command.return_value.stdout = json.dumps([complete])
+                self.assertEqual(site.verify_attestations(directory, 'aurora-silicon/alarm-aurora', 'edge'),
+                                 'verified')
+                command.return_value.stdout = json.dumps([
+                    {'verificationResult': {'statement': {'subject': subjects[:2]}}},
+                    {'verificationResult': {'statement': {'subject': subjects[::2]}}},
+                ])
+                with self.assertRaisesRegex(ValueError, 'does not cover every asset'):
+                    site.verify_attestations(directory, 'aurora-silicon/alarm-aurora', 'edge')
 
 LINUX = {'repository': 'aurora-silicon/linux', 'branch': 'aurora-edge', 'revision': '1' * 40, 'tree': '2' * 40}
 MESA = {'repository': 'aurora-silicon/mesa', 'branch': 'aurora-edge', 'revision': '3' * 40, 'tree': '4' * 40}
@@ -101,6 +126,29 @@ class GateTests(unittest.TestCase):
                 (None, 'edge-20261121.1', self.sources(), 'adopted Edge train')):
             with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
                 edgelib.edge_gate(record, tag, sources)
+
+    def test_assembly_gates_the_source_record_from_the_authenticated_snapshot(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            train = root / 'train.json'
+            train.write_text(json.dumps(self.record()))
+            args = SimpleNamespace(repository='aurora-silicon/alarm-aurora', channel='edge',
+                                   tag='edge-20261121.1', edge_train=train, work=root / 'work',
+                                   site=root / 'site', site_url='unused')
+
+            def fetch(repository, tag, destination, home, fingerprint, channel):
+                destination.mkdir(parents=True)
+                (destination / 'edge-sources.json').write_text(json.dumps(self.sources()))
+                return 'verified'
+
+            with (patch.object(site.lib, 'load_channels', return_value={'channels': {}}),
+                  patch.object(site.lib, 'gh', side_effect=AssertionError('separate source download')),
+                  patch.object(site, 'keyring', return_value=(root / 'keys', 'key')),
+                  patch.object(site, 'fetch_snapshot', side_effect=fetch) as snapshot_fetch,
+                  patch.object(site, 'live_database', side_effect=RuntimeError('gate passed'))):
+                with self.assertRaisesRegex(RuntimeError, 'gate passed'):
+                    site.assemble(args)
+            snapshot_fetch.assert_called_once()
 
 
 class ImageTests(unittest.TestCase):
