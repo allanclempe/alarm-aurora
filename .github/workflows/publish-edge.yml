@@ -70,7 +70,7 @@ jobs:
           python3 -c 'import json,sys; sys.path.insert(0,"scripts"); import edgelib; edgelib.check_staging_files(json.load(open("staging-files.json")))'
           gh api "repos/$GITHUB_REPOSITORY/contents/sources.json?ref=$head" \
             -H 'Accept: application/vnd.github.raw+json' > edge-build-sources.json
-          linux=$(jq -r '.["linux-aurora"].commit' edge-build-sources.json)
+          linux=$(jq -er '."kernel-aurora".commit' edge-build-sources.json)
           mesa=$(jq -r '.["mesa-aurora"].commit' edge-build-sources.json)
           [[ $linux =~ ^[0-9a-f]{40}$ && $mesa =~ ^[0-9a-f]{40}$ ]]
           kernel_repo=aurora-silicon/linux

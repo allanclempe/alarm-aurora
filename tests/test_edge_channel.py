@@ -1,6 +1,7 @@
 """The ALARM Edge overlay feed and Edge images (aurora-distributions docs/edge-train.md)."""
 import hashlib
 import importlib.util
+import json
 from pathlib import Path
 import sys
 import tempfile
@@ -61,13 +62,20 @@ class OverlayTests(unittest.TestCase):
                 edgelib.check_staging_files(['sources.json', path])
 
     def test_packaged_sources_are_one_pair(self):
-        sources = {'linux-aurora': {'commit': LINUX['revision']}, 'mesa-aurora': {'commit': MESA['revision']},
+        sources = {'kernel-aurora': {'commit': LINUX['revision']}, 'mesa-aurora': {'commit': MESA['revision']},
                    'mesa-aurora-fex-guest': {'commit': MESA['revision']}}
         trees = {'linux': LINUX['tree'], 'mesa': MESA['tree']}
         self.assertEqual(edgelib.packaged_sources(sources, trees), {'linux': LINUX, 'mesa': MESA})
         sources['mesa-aurora-fex-guest']['commit'] = '5' * 40
         with self.assertRaisesRegex(ValueError, 'one Mesa'):
             edgelib.packaged_sources(sources, trees)
+
+    def test_packaged_kernel_pin_matches_the_source_lockfile(self):
+        sources = json.loads((ROOT / 'sources.json').read_text())
+        trees = {'linux': LINUX['tree'], 'mesa': MESA['tree']}
+        pair = edgelib.packaged_sources(sources, trees)
+        self.assertEqual(pair['linux']['revision'], sources['kernel-aurora']['commit'])
+        self.assertEqual(pair['mesa']['revision'], sources['mesa-aurora']['commit'])
 
 
 class GateTests(unittest.TestCase):

@@ -127,7 +127,7 @@ def packaged_sources(sources, trees):
             if name in sources}
     if len(mesa) != 1:
         raise ValueError('the Edge build must package one Mesa revision')
-    return {'linux': source('linux', sources['linux-aurora']['commit'], trees['linux']),
+    return {'linux': source('linux', sources['kernel-aurora']['commit'], trees['linux']),
             'mesa': source('mesa', mesa.pop(), trees['mesa'])}
 
 
