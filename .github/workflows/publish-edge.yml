@@ -90,7 +90,11 @@ jobs:
             --signer-workflow "$kernel_repo/.github/workflows/kernel-release.yml" \
             --source-ref refs/heads/main --source-digest "$linux" --deny-self-hosted-runners
           gh api "repos/$kernel_repo/compare/$linux...main" --jq .status | grep -Eqx 'ahead|identical'
-          gh api "repos/aurora-silicon/mesa/compare/$mesa...aurora-edge" --jq .status | grep -Eqx 'ahead|identical'
+          mesa_repo=aurora-silicon/mesa
+          [[ $(gh api "repos/$mesa_repo" --jq .default_branch) == aurora-wip ]]
+          mesa_tip=$(gh api "repos/$mesa_repo/git/ref/heads/aurora-wip" --jq .object.sha)
+          [[ $mesa_tip =~ ^[0-9a-f]{40}$ ]]
+          gh api "repos/$mesa_repo/compare/$mesa...$mesa_tip" --jq .status | grep -Eqx 'ahead|identical'
           jq -n --arg linux "$(gh api "repos/aurora-silicon/linux/git/commits/$linux" --jq .tree.sha)" \
                 --arg mesa "$(gh api "repos/aurora-silicon/mesa/git/commits/$mesa" --jq .tree.sha)" \
                 --arg linux_release_sha256 "${digest#sha256:}" \

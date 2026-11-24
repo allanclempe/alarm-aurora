@@ -11,6 +11,7 @@ import re
 TAG = re.compile(r'edge-[0-9]{8}\.[1-9][0-9]*')
 TESTING_TAG = re.compile(r'testing-[0-9]{8}\.[1-9][0-9]*')
 REVISION = re.compile(r'[0-9a-f]{40}')
+SOURCE_BRANCHES = {'linux': 'main', 'mesa': 'aurora-wip'}
 FEED = 'https://aurorasilicon.org/alarm-aurora/edge/aarch64'
 TESTING_FEED = 'https://aurorasilicon.org/alarm-aurora/testing/aarch64'
 RELEASES = 'https://github.com/aurora-silicon/alarm-aurora/releases/download/'
@@ -126,7 +127,8 @@ def check_staging_files(paths):
 def source(name, revision, tree):
     if not REVISION.fullmatch(revision or '') or not REVISION.fullmatch(tree or ''):
         raise ValueError('invalid %s revision or tree' % name)
-    return {'repository': 'aurora-silicon/' + name, 'branch': 'aurora-edge', 'revision': revision, 'tree': tree}
+    return {'repository': 'aurora-silicon/' + name, 'branch': SOURCE_BRANCHES[name],
+            'revision': revision, 'tree': tree}
 
 
 def packaged_sources(sources, trees):
@@ -141,7 +143,7 @@ def packaged_sources(sources, trees):
 def edge_gate(record, tag, sources):
     """Serve on Edge only the overlay the adopted aurora-distributions Edge train names."""
     entry = ((record or {}).get('distributions') or {}).get('arch') or {}
-    if (not record or record.get('schema_version') != 1
+    if (not record or record.get('schema_version') not in (1, 2)
             or entry.get('repository') != 'aurora-silicon/alarm-aurora' or entry.get('snapshot') != snapshot(tag)):
         raise ValueError(f'{tag} is not the ALARM snapshot of the adopted Edge train')
     if (sources or {}).get('schema') != 1 or sources.get('channel') != 'edge' \

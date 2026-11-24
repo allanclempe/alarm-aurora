@@ -139,7 +139,8 @@ class OverlayTests(unittest.TestCase):
         sources = {'kernel-aurora': {'commit': LINUX['revision']}, 'mesa-aurora': {'commit': MESA['revision']},
                    'mesa-aurora-fex-guest': {'commit': MESA['revision']}}
         trees = {'linux': LINUX['tree'], 'mesa': MESA['tree']}
-        self.assertEqual(edgelib.packaged_sources(sources, trees), {'linux': LINUX, 'mesa': MESA})
+        self.assertEqual(edgelib.packaged_sources(sources, trees),
+                         {'linux': dict(LINUX, branch='main'), 'mesa': dict(MESA, branch='aurora-wip')})
         sources['mesa-aurora-fex-guest']['commit'] = '5' * 40
         with self.assertRaisesRegex(ValueError, 'one Mesa'):
             edgelib.packaged_sources(sources, trees)
