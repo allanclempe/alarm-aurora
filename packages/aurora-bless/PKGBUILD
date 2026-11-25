@@ -1,13 +1,13 @@
 pkgbase=aurora-bless
 pkgname=('aurora-bless' 'aurora-nvram' 'aurora-btsync' 'aurora-panel-nits')
-pkgver=0.4.4.aurora6
+pkgver=0.4.4.aurora7
 pkgrel=1
 pkgdesc='Aurora Apple Silicon startup-volume selector with Neo NVRAM support'
 arch=('aarch64')
 groups=('aurora-platform-apple-silicon')
 url='https://github.com/aurora-silicon/aurora-bless'
 license=('MIT')
-_commit=7205ea0ac6569c8b7c2d6916960fcc0da91cfa8d
+_commit=65a82f97d597a4582f6db5a940206ab1e7e3858d
 makedepends=('git' 'rust' 'cargo' 'make' 'dbus' 'pkgconf')
 source=("aurora-bless::git+$url.git#commit=$_commit")
 sha256sums=('SKIP')
